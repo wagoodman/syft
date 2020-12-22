@@ -59,6 +59,12 @@ func TestImageSquashResolver_FilesByPath(t *testing.T) {
 			resolveLayer: 11,
 			resolvePath:  "/parent/file-4.txt",
 		},
+		{
+			name:         "parent is a link (with overridden data)",
+			linkPath:     "/parent-link/file-4.txt",
+			resolveLayer: 11,
+			resolvePath:  "/parent/file-4.txt",
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
