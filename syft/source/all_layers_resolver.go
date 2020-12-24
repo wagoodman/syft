@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/anchore/syft/internal/log"
+
 	"github.com/anchore/stereoscope/pkg/file"
 	"github.com/anchore/stereoscope/pkg/filetree"
 	"github.com/anchore/stereoscope/pkg/image"
