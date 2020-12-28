@@ -147,16 +147,13 @@ func TestAllLayersResolver_FilesByGlob(t *testing.T) {
 		resolutions []resolution
 	}{
 		{
-			name:        "link with previous data",
-			glob:        "**/*ink-1",
+			name: "link with previous data",
+			glob: "**/*ink-1",
 			resolutions: []resolution{
-				// commented out to illustrate previous behavior, when dead links were resolved to the nearest lower
-				// layer with a valid link resolution. Symlink resolution changes in stereoscope makes this
-				// very difficult to do.
-				//{
-				//	layer: 1,
-				//	path:  "/file-1.txt",
-				//},
+				{
+					layer: 1,
+					path:  "/file-1.txt",
+				},
 			},
 		},
 		{
@@ -184,20 +181,17 @@ func TestAllLayersResolver_FilesByGlob(t *testing.T) {
 			},
 		},
 		{
-			name:        "indirect link (with overridden data)",
-			glob:        "**/*nk-indirect",
+			name: "indirect link (with overridden data)",
+			glob: "**/*nk-indirect",
 			resolutions: []resolution{
-				// commented out to illustrate previous behavior, when dead links were resolved to the nearest lower
-				// layer with a valid link resolution. Symlink resolution changes in stereoscope makes this
-				// very difficult to do.
-				//{
-				//	layer: 4,
-				//	path:  "/file-2.txt",
-				//},
-				//{
-				//	layer: 7,
-				//	path:  "/file-2.txt",
-				//},
+				{
+					layer: 4,
+					path:  "/file-2.txt",
+				},
+				{
+					layer: 7,
+					path:  "/file-2.txt",
+				},
 			},
 		},
 		{
