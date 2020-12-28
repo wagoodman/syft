@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/anchore/stereoscope/pkg/filetree"
+
 	"github.com/anchore/stereoscope/pkg/file"
 	"github.com/anchore/stereoscope/pkg/filetree"
 	"github.com/anchore/stereoscope/pkg/image"

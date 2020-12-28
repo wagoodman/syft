@@ -19,16 +19,13 @@ func TestAllLayersResolver_FilesByPath(t *testing.T) {
 		forcePositiveHasPath bool
 	}{
 		{
-			name:        "link with previous data",
-			linkPath:    "/link-1",
+			name:     "link with previous data",
+			linkPath: "/link-1",
 			resolutions: []resolution{
-				// commented out to illustrate previous behavior, when dead links were resolved to the nearest lower
-				// layer with a valid link resolution. Symlink resolution changes in stereoscope makes this
-				// very difficult to do.
-				//{
-				//	layer: 1,
-				//	path:  "/file-1.txt",
-				//},
+				{
+					layer: 1,
+					path:  "/file-1.txt",
+				},
 			},
 		},
 		{
@@ -56,20 +53,17 @@ func TestAllLayersResolver_FilesByPath(t *testing.T) {
 			},
 		},
 		{
-			name:        "indirect link (with overridden data)",
-			linkPath:    "/link-indirect",
+			name:     "indirect link (with overridden data)",
+			linkPath: "/link-indirect",
 			resolutions: []resolution{
-				// commented out to illustrate previous behavior, when dead links were resolved to the nearest lower
-				// layer with a valid link resolution. Symlink resolution changes in stereoscope makes this
-				// very difficult to do.
-				//{
-				//	layer: 4,
-				//	path:  "/file-2.txt",
-				//},
-				//{
-				//	layer: 7,
-				//	path:  "/file-2.txt",
-				//},
+				{
+					layer: 4,
+					path:  "/file-2.txt",
+				},
+				{
+					layer: 7,
+					path:  "/file-2.txt",
+				},
 			},
 		},
 		{

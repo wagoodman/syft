@@ -179,7 +179,7 @@ $(SNAPSHOTDIR): ## Build snapshot release binaries and packages
 
 # note: we cannot clean the snapshot directory since the pipeline builds the snapshot separately
 .PHONY: acceptance-mac
-acceptance-mac: $(SNAPSHOTDIR) ## Run acceptance tests on build snapshot binaries and packages (Mac)
+acceptance-mac: clean-snapshot $(SNAPSHOTDIR) ## Run acceptance tests on build snapshot binaries and packages (Mac)
 	$(call title,Running acceptance test: Run on Mac)
 	$(ACC_DIR)/mac.sh \
 			$(SNAPSHOTDIR) \
@@ -189,7 +189,7 @@ acceptance-mac: $(SNAPSHOTDIR) ## Run acceptance tests on build snapshot binarie
 
 # note: we cannot clean the snapshot directory since the pipeline builds the snapshot separately
 .PHONY: acceptance-linux
-acceptance-linux: acceptance-test-deb-package-install acceptance-test-rpm-package-install ## Run acceptance tests on build snapshot binaries and packages (Linux)
+acceptance-linux: clean-snapshot acceptance-test-deb-package-install acceptance-test-rpm-package-install ## Run acceptance tests on build snapshot binaries and packages (Linux)
 
 # note: this is used by CI to determine if the inline-scan report cache should be busted for the inline-compare tests
 .PHONY: compare-fingerprint
