@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/anchore/syft/internal"
-
 	"github.com/anchore/syft/internal/version"
 	"github.com/anchore/syft/syft/presenter"
 	"github.com/spf13/cobra"
@@ -17,7 +16,7 @@ var outputFormat string
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "show the version",
-	Run:   printVersion,
+	RunE:  versionExec,
 }
 
 func init() {
@@ -25,7 +24,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 }
 
-func printVersion(_ *cobra.Command, _ []string) {
+func versionExec(_ *cobra.Command, _ []string) error {
 	versionInfo := version.FromBuild()
 
 	switch outputFormat {
@@ -51,11 +50,10 @@ func printVersion(_ *cobra.Command, _ []string) {
 			Application: internal.ApplicationName,
 		})
 		if err != nil {
-			fmt.Printf("failed to show version information: %+v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to show version information: %w", err)
 		}
 	default:
-		fmt.Printf("unsupported output format: %s\n", outputFormat)
-		os.Exit(1)
+		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
+	return nil
 }

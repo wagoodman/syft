@@ -8,8 +8,9 @@ import (
 
 // completionCmd represents the completion command
 var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish]",
-	Short: "Generate a shell completion for Syft (listing local docker images)",
+	Hidden: true,
+	Use:    "completion [bash|zsh|fish]",
+	Short:  "Generate a shell completion for Syft (listing local docker images)",
 	Long: `To load completions (docker image list):
 
 Bash:
