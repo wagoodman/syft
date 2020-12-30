@@ -166,7 +166,7 @@ func TestDirectoryResolver_MultipleFileContentsByRef(t *testing.T) {
 
 			contents, err := resolver.MultipleFileContentsByLocation(locations)
 			if err != nil {
-				t.Fatalf("unable to generate file contents by ref: %+v", err)
+				t.Fatalf("unable to generate file contents by Reference: %+v", err)
 			}
 			if len(contents) != c.refCount {
 				t.Errorf("unexpected number of locations produced: %d != %d", len(contents), c.refCount)

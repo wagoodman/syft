@@ -13,7 +13,7 @@ type Location struct {
 	RealPath     string         `json:"path"`              // The path where all path ancestors have no hardlinks / symlinks
 	VirtualPath  string         `json:"-"`                 // The path to the file which may or may not have hardlinks / symlinks
 	FileSystemID string         `json:"layerID,omitempty"` // An ID representing the filesystem. For container images this is a layer digest, directories or root filesystem this is blank.
-	ref          file.Reference // The file reference relative to the stereoscope.FileCatalog that has more information about this location.
+	ref          file.Reference `json:"-"`                 // The file reference relative to the stereoscope.FileCatalog that has more information about this location.
 }
 
 // NewLocation creates a new Location representing a path without denoting a filesystem or FileCatalog reference.
@@ -27,7 +27,7 @@ func NewLocation(path string) Location {
 func NewLocationFromImage(virtualPath string, ref file.Reference, img *image.Image) Location {
 	entry, err := img.FileCatalog.Get(ref)
 	if err != nil {
-		log.Warnf("unable to find file catalog entry for ref=%+v", ref)
+		log.Warnf("unable to find file catalog entry for Reference=%+v", ref)
 		return Location{
 			VirtualPath: virtualPath,
 			RealPath:    string(ref.RealPath),

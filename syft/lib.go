@@ -41,6 +41,12 @@ func Catalog(userInput string, scope source.Scope) (source.Source, *pkg.Catalog,
 		return source.Source{}, nil, nil, err
 	}
 
+	catalog, theDistro, err := CatalogFromSource(theSource)
+	return theSource, catalog, theDistro, err
+}
+
+// CatalogFromSource is the same as Catalog() except the source.Source is explicitly provided by the user.
+func CatalogFromSource(theSource source.Source) (*pkg.Catalog, *distro.Distro, error) {
 	// find the distro
 	theDistro := distro.Identify(theSource.Resolver)
 	if theDistro != nil {
@@ -59,15 +65,15 @@ func Catalog(userInput string, scope source.Scope) (source.Source, *pkg.Catalog,
 		log.Info("cataloging directory")
 		catalogers = cataloger.DirectoryCatalogers()
 	default:
-		return source.Source{}, nil, nil, fmt.Errorf("unable to determine cataloger set from scheme=%+v", theSource.Metadata.Scheme)
+		return nil, nil, fmt.Errorf("unable to determine cataloger set from scheme=%+v", theSource.Metadata.Scheme)
 	}
 
 	catalog, err := cataloger.Catalog(theSource.Resolver, theDistro, catalogers...)
 	if err != nil {
-		return source.Source{}, nil, nil, err
+		return nil, nil, err
 	}
 
-	return theSource, catalog, theDistro, nil
+	return catalog, theDistro, nil
 }
 
 // CatalogFromJSON takes an existing syft report and generates native syft objects.

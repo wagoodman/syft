@@ -116,7 +116,7 @@ func TestImageSquashResolver_FilesByPath(t *testing.T) {
 				t.Errorf("we should always prefer real paths over ones with links")
 			}
 
-			entry, err := img.FileCatalog.Get(actual.ref)
+			entry, err := img.FileCatalog.Get(actual.Reference)
 			if err != nil {
 				t.Fatalf("failed to get metadata: %+v", err)
 			}
@@ -222,7 +222,7 @@ func TestImageSquashResolver_FilesByGlob(t *testing.T) {
 				t.Errorf("we should always prefer real paths over ones with links")
 			}
 
-			entry, err := img.FileCatalog.Get(actual.ref)
+			entry, err := img.FileCatalog.Get(actual.Reference)
 			if err != nil {
 				t.Fatalf("failed to get metadata: %+v", err)
 			}

@@ -62,18 +62,6 @@ func setFormatOptions(flags *pflag.FlagSet) {
 		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
 		os.Exit(1)
 	}
-
-	flag = "quiet"
-	flags.BoolP(
-		flag, "q", false,
-		"suppress all logging output",
-	)
-	if err := viper.BindPFlag(flag, flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
-	}
-
-	flags.CountVarP(&cliOpts.Verbosity, "verbose", "v", "increase verbosity (-v = info, -vv = debug)")
 }
 
 func setUploadFlags(flags *pflag.FlagSet) {

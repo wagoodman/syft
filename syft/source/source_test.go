@@ -178,7 +178,7 @@ func TestFilesByPathDoesNotExist(t *testing.T) {
 			}
 
 			if len(refs) != 0 {
-				t.Errorf("didnt' expect a ref, but got: %d", len(refs))
+				t.Errorf("didnt' expect a Reference, but got: %d", len(refs))
 			}
 
 		})
@@ -244,7 +244,7 @@ func TestDetectScheme(t *testing.T) {
 		expectedLocation string
 	}{
 		{
-			name:      "docker-image-ref",
+			name:      "docker-image-Reference",
 			userInput: "wagoodman/dive:latest",
 			detection: detectorResult{
 				src: image.DockerDaemonSource,
@@ -254,7 +254,7 @@ func TestDetectScheme(t *testing.T) {
 			expectedLocation: "wagoodman/dive:latest",
 		},
 		{
-			name:      "docker-image-ref-no-tag",
+			name:      "docker-image-Reference-no-tag",
 			userInput: "wagoodman/dive",
 			detection: detectorResult{
 				src: image.DockerDaemonSource,
