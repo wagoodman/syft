@@ -9,10 +9,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anchore/syft/internal/presenter/packages"
+
 	"github.com/alecthomas/jsonschema"
 	"github.com/anchore/syft/internal"
 	"github.com/anchore/syft/syft/pkg"
-	jsonPresenter "github.com/anchore/syft/syft/presenter/json"
 )
 
 /*
@@ -38,7 +39,7 @@ type metadataContainer struct {
 // nolint:funlen
 func main() {
 	metadataSchema := jsonschema.Reflect(&metadataContainer{})
-	documentSchema := jsonschema.Reflect(&jsonPresenter.Document{})
+	documentSchema := jsonschema.Reflect(&packages.JsonDocument{})
 
 	// TODO: inject source definitions
 
