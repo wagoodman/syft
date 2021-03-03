@@ -57,7 +57,7 @@ func TestDirectoryResolver_FilesByPath(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			resolver := DirectoryResolver{c.root}
+			resolver := directoryResolver{c.root}
 
 			hasPath := resolver.HasPath(c.input)
 			if !c.forcePositiveHasPath {
@@ -112,7 +112,7 @@ func TestDirectoryResolver_MultipleFilesByPath(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			resolver := DirectoryResolver{"test-fixtures"}
+			resolver := directoryResolver{"test-fixtures"}
 
 			refs, err := resolver.FilesByPath(c.input...)
 			if err != nil {
@@ -152,7 +152,7 @@ func TestDirectoryResolver_MultipleFileContentsByRef(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			locations := make([]Location, 0)
-			resolver := DirectoryResolver{"test-fixtures"}
+			resolver := directoryResolver{"test-fixtures"}
 
 			for _, p := range c.input {
 				newRefs, err := resolver.FilesByPath(p)
@@ -178,7 +178,7 @@ func TestDirectoryResolver_MultipleFileContentsByRef(t *testing.T) {
 
 func TestDirectoryResolver_FilesByGlobMultiple(t *testing.T) {
 	t.Run("finds multiple matching files", func(t *testing.T) {
-		resolver := DirectoryResolver{"test-fixtures"}
+		resolver := directoryResolver{"test-fixtures"}
 		refs, err := resolver.FilesByGlob("image-symlinks/file*")
 
 		if err != nil {
@@ -195,7 +195,7 @@ func TestDirectoryResolver_FilesByGlobMultiple(t *testing.T) {
 
 func TestDirectoryResolver_FilesByGlobRecursive(t *testing.T) {
 	t.Run("finds multiple matching files", func(t *testing.T) {
-		resolver := DirectoryResolver{"test-fixtures/image-symlinks"}
+		resolver := directoryResolver{"test-fixtures/image-symlinks"}
 		refs, err := resolver.FilesByGlob("**/*.txt")
 
 		if err != nil {
@@ -212,7 +212,7 @@ func TestDirectoryResolver_FilesByGlobRecursive(t *testing.T) {
 
 func TestDirectoryResolver_FilesByGlobSingle(t *testing.T) {
 	t.Run("finds multiple matching files", func(t *testing.T) {
-		resolver := DirectoryResolver{"test-fixtures"}
+		resolver := directoryResolver{"test-fixtures"}
 		refs, err := resolver.FilesByGlob("image-symlinks/*1.txt")
 		if err != nil {
 			t.Fatalf("could not use resolver: %+v, %+v", err, refs)

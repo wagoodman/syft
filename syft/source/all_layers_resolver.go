@@ -13,32 +13,41 @@ import (
 	"github.com/anchore/syft/internal/log"
 )
 
-var _ Resolver = (*AllLayersResolver)(nil)
+var _ FileResolver = (*allLayersResolver)(nil)
 
-// AllLayersResolver implements path and content access for the AllLayers source option for container image data sources.
-type AllLayersResolver struct {
+// allLayersResolver implements path and content access for the AllLayers source option for container image data sources.
+type allLayersResolver struct {
 	img    *image.Image
 	layers []int
+	refs   file.ReferenceSet
 }
 
-// NewAllLayersResolver returns a new resolver from the perspective of all image layers for the given image.
-func NewAllLayersResolver(img *image.Image) (*AllLayersResolver, error) {
+// newAllLayersResolver returns a new resolver from the perspective of all image layers for the given image.
+func newAllLayersResolver(img *image.Image) (*allLayersResolver, error) {
 	if len(img.Layers) == 0 {
 		return nil, fmt.Errorf("the image does not contain any layers")
+	}
+
+	refs := file.NewFileReferenceSet()
+	for _, l := range img.Layers {
+		for _, r := range l.Tree.AllFiles() {
+			refs.Add(r)
+		}
 	}
 
 	var layers = make([]int, 0)
 	for idx := range img.Layers {
 		layers = append(layers, idx)
 	}
-	return &AllLayersResolver{
+	return &allLayersResolver{
 		img:    img,
 		layers: layers,
+		refs:   refs,
 	}, nil
 }
 
 // HasPath indicates if the given path exists in the underlying source.
-func (r *AllLayersResolver) HasPath(path string) bool {
+func (r *allLayersResolver) HasPath(path string) bool {
 	p := file.Path(path)
 	for _, layerIdx := range r.layers {
 		tree := r.img.Layers[layerIdx].Tree
@@ -49,7 +58,14 @@ func (r *AllLayersResolver) HasPath(path string) bool {
 	return false
 }
 
-func (r *AllLayersResolver) fileByRef(ref file.Reference, uniqueFileIDs file.ReferenceSet, layerIdx int) ([]file.Reference, error) {
+func (r *allLayersResolver) HasLocation(l Location) bool {
+	if l.ref.ID() == 0 {
+		return false
+	}
+	return r.refs.Contains(l.ref)
+}
+
+func (r *allLayersResolver) fileByRef(ref file.Reference, uniqueFileIDs file.ReferenceSet, layerIdx int) ([]file.Reference, error) {
 	uniqueFiles := make([]file.Reference, 0)
 
 	// since there is potentially considerable work for each symlink/hardlink that needs to be resolved, let's check to see if this is a symlink/hardlink first
@@ -80,7 +96,7 @@ func (r *AllLayersResolver) fileByRef(ref file.Reference, uniqueFileIDs file.Ref
 }
 
 // FilesByPath returns all file.References that match the given paths from any layer in the image.
-func (r *AllLayersResolver) FilesByPath(paths ...string) ([]Location, error) {
+func (r *allLayersResolver) FilesByPath(paths ...string) ([]Location, error) {
 	uniqueFileIDs := file.NewFileReferenceSet()
 	uniqueLocations := make([]Location, 0)
 
@@ -123,7 +139,7 @@ func (r *AllLayersResolver) FilesByPath(paths ...string) ([]Location, error) {
 
 // FilesByGlob returns all file.References that match the given path glob pattern from any layer in the image.
 // nolint:gocognit
-func (r *AllLayersResolver) FilesByGlob(patterns ...string) ([]Location, error) {
+func (r *allLayersResolver) FilesByGlob(patterns ...string) ([]Location, error) {
 	uniqueFileIDs := file.NewFileReferenceSet()
 	uniqueLocations := make([]Location, 0)
 
@@ -164,7 +180,7 @@ func (r *AllLayersResolver) FilesByGlob(patterns ...string) ([]Location, error) 
 
 // RelativeFileByPath fetches a single file at the given path relative to the layer squash of the given reference.
 // This is helpful when attempting to find a file that is in the same layer or lower as another file.
-func (r *AllLayersResolver) RelativeFileByPath(location Location, path string) *Location {
+func (r *allLayersResolver) RelativeFileByPath(location Location, path string) *Location {
 	entry, err := r.img.FileCatalog.Get(location.ref)
 	if err != nil {
 		return nil
@@ -186,13 +202,13 @@ func (r *AllLayersResolver) RelativeFileByPath(location Location, path string) *
 
 // MultipleFileContentsByLocation returns the file contents for all file.References relative to the image. Note that a
 // file.Reference is a path relative to a particular layer.
-func (r *AllLayersResolver) MultipleFileContentsByLocation(locations []Location) (map[Location]io.ReadCloser, error) {
+func (r *allLayersResolver) MultipleFileContentsByLocation(locations []Location) (map[Location]io.ReadCloser, error) {
 	return mapLocationRefs(r.img.MultipleFileContentsByRef, locations)
 }
 
 // FileContentsByLocation fetches file contents for a single file reference, irregardless of the source layer.
 // If the path does not exist an error is returned.
-func (r *AllLayersResolver) FileContentsByLocation(location Location) (io.ReadCloser, error) {
+func (r *allLayersResolver) FileContentsByLocation(location Location) (io.ReadCloser, error) {
 	return r.img.FileContentsByRef(location.ref)
 }
 

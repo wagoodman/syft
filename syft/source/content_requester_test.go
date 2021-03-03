@@ -28,7 +28,7 @@ func TestContentRequester(t *testing.T) {
 			img, cleanup := imagetest.GetFixtureImage(t, "docker-archive", "image-simple")
 			defer cleanup()
 
-			resolver, err := NewAllLayersResolver(img)
+			resolver, err := newAllLayersResolver(img)
 			if err != nil {
 				t.Fatalf("could not create resolver: %+v", err)
 			}

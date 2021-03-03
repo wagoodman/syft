@@ -2,16 +2,16 @@ package source
 
 import "sync"
 
-// ContentRequester is an object tailored for taking source.Location objects which file contents will be resolved
+// contentRequester is an object tailored for taking source.Location objects which file contents will be resolved
 // upon invoking Execute().
-type ContentRequester struct {
+type contentRequester struct {
 	request map[Location][]*FileData
 	lock    sync.Mutex
 }
 
-// NewContentRequester creates a new ContentRequester object with the given initial request data.
-func NewContentRequester(data ...*FileData) *ContentRequester {
-	requester := &ContentRequester{
+// NewContentRequester creates a new contentRequester object with the given initial request data.
+func NewContentRequester(data ...*FileData) *contentRequester {
+	requester := &contentRequester{
 		request: make(map[Location][]*FileData),
 	}
 	for _, d := range data {
@@ -22,7 +22,7 @@ func NewContentRequester(data ...*FileData) *ContentRequester {
 
 // Add appends a new single FileData containing a source.Location to later have the contents fetched and stored within
 // the given FileData object.
-func (r *ContentRequester) Add(data *FileData) {
+func (r *contentRequester) Add(data *FileData) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -31,7 +31,7 @@ func (r *ContentRequester) Add(data *FileData) {
 
 // Execute takes the previously provided source.Location's and resolves the file contents, storing the results within
 // the previously provided FileData objects.
-func (r *ContentRequester) Execute(resolver ContentResolver) error {
+func (r *contentRequester) Execute(resolver FileContentResolver) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

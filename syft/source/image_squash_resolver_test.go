@@ -65,7 +65,7 @@ func TestImageSquashResolver_FilesByPath(t *testing.T) {
 			img, cleanup := imagetest.GetFixtureImage(t, "docker-archive", "image-symlinks")
 			defer cleanup()
 
-			resolver, err := NewImageSquashResolver(img)
+			resolver, err := newImageSquashResolver(img)
 			if err != nil {
 				t.Fatalf("could not create resolver: %+v", err)
 			}
@@ -182,7 +182,7 @@ func TestImageSquashResolver_FilesByGlob(t *testing.T) {
 			img, cleanup := imagetest.GetFixtureImage(t, "docker-archive", "image-symlinks")
 			defer cleanup()
 
-			resolver, err := NewImageSquashResolver(img)
+			resolver, err := newImageSquashResolver(img)
 			if err != nil {
 				t.Fatalf("could not create resolver: %+v", err)
 			}
