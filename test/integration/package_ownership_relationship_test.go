@@ -5,11 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/anchore/stereoscope/pkg/imagetest"
-	"github.com/anchore/syft/syft"
-	"github.com/anchore/syft/syft/presenter"
-	jsonPresenter "github.com/anchore/syft/syft/presenter/json"
-	"github.com/anchore/syft/syft/source"
+	"github.com/anchore/syft/internal/presenter/packages"
 )
 
 func TestPackageOwnershipRelationships(t *testing.T) {
@@ -25,16 +21,9 @@ func TestPackageOwnershipRelationships(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.fixture, func(t *testing.T) {
-			_, cleanup := imagetest.GetFixtureImage(t, "docker-archive", test.fixture)
-			tarPath := imagetest.GetFixtureImageTarPath(t, test.fixture)
-			defer cleanup()
+			catalog, d, src := catalogFixtureImage(t, test.fixture)
 
-			src, catalog, d, err := syft.Catalog("docker-archive:"+tarPath, source.SquashedScope)
-			if err != nil {
-				t.Fatalf("failed to catalog image: %+v", err)
-			}
-
-			p := presenter.GetPresenter(presenter.JSONPresenter, src.Metadata, catalog, d)
+			p := packages.Presenter(packages.JSONPresenterOption, src.Metadata, catalog, d)
 			if p == nil {
 				t.Fatal("unable to get presenter")
 			}
@@ -45,7 +34,7 @@ func TestPackageOwnershipRelationships(t *testing.T) {
 				t.Fatalf("unable to present: %+v", err)
 			}
 
-			var doc jsonPresenter.Document
+			var doc packages.JsonDocument
 			decoder := json.NewDecoder(output)
 			if err := decoder.Decode(&doc); err != nil {
 				t.Fatalf("unable to decode json doc: %+v", err)
