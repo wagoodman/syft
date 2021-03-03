@@ -4,9 +4,21 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/anchore/stereoscope/pkg/image"
+	"github.com/anchore/syft/internal/bus"
+	"github.com/anchore/syft/internal/config"
+	"github.com/anchore/syft/internal/log"
+	"github.com/anchore/syft/internal/presenter/packages"
 	"github.com/anchore/syft/internal/ui"
+	"github.com/anchore/syft/syft/event"
+	"github.com/anchore/syft/syft/file"
+	fileMetadata "github.com/anchore/syft/syft/file/indexer/metadata"
+	"github.com/anchore/syft/syft/source"
+	"github.com/gookit/color"
 	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/wagoodman/go-partybus"
 )
 
 var powerUserOpts = struct {
@@ -60,7 +72,80 @@ func powerUserExecWorker(userInput string) <-chan error {
 	go func() {
 		defer close(errs)
 
-		// TODO:...
+		powerUserConfig, err := config.LoadPowerUserConfig(viper.New(), powerUserOpts.configPath, *appConfig)
+		if err != nil {
+			errs <- err
+			return
+		}
+
+		log.Debugf("power-user config:\n%s", color.Magenta.Sprint(powerUserConfig.String()))
+
+		checkForApplicationUpdate()
+
+		src, cleanup, err := source.New(userInput)
+		if err != nil {
+			errs <- err
+			return
+		}
+		defer cleanup()
+
+		if src.Metadata.Scheme != source.ImageScheme {
+			errs <- fmt.Errorf("the power-user subcommand only allows for 'image' schemes, given %q", src.Metadata.Scheme)
+			return
+		}
+
+		//if powerUserConfig.PackagesCataloger.Enabled {
+		//	catalog, d, err := syft.CatalogPackages(src, powerUserConfig.PackagesCataloger.ScopeOpt)
+		//	if err != nil {
+		//		errs <- fmt.Errorf("failed to catalog input: %+v", err)
+		//		return
+		//	}
+		//}
+
+		_, err = runIndexers(*powerUserConfig, src)
+		if err != nil {
+			errs <- err
+			return
+		}
+
+		//src, catalog, d, err := syft.Catalog(userInput, appConfig.ScopeOpt)
+		//if err != nil {
+		//	errs <- fmt.Errorf("failed to catalog input: %+v", err)
+		//	return
+		//}
+
+		bus.Publish(partybus.Event{
+			Type:  event.PresenterReady,
+			Value: packages.Presenter(packages.JSONPresenterOption, packages.PresenterConfig{}),
+		})
 	}()
 	return errs
+}
+
+func runIndexers(powerUserConfig config.PowerUser, theSource source.Source) (*file.Catalog, error) {
+	fileCatalog := file.NewCatalog()
+
+	fileMetadataConfig := powerUserConfig.FileMetadataIndexer
+	resolver, err := theSource.FileResolver(fileMetadataConfig.ScopeOpt)
+	if err != nil {
+		return nil, err
+	}
+	fileMetadataIndexerConfig := fileMetadata.IndexerConfig{
+		Resolver:       resolver,
+		HashAlgorithms: fileMetadataConfig.Digests,
+	}
+	fileMetadataIndexer, err := fileMetadata.NewIndexer(fileMetadataIndexerConfig, fileCatalog.NewIndexedCatalogEntryFactory(fileMetadata.Index))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create fileMetadata indexer: %w", err)
+	}
+
+	indexers := []image.ContentObserver{
+		fileMetadataIndexer,
+	}
+
+	if err = file.Index(theSource.Image, indexers...); err != nil {
+		return nil, err
+	}
+
+	return fileCatalog, nil
 }
