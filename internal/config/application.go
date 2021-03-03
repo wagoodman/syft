@@ -7,7 +7,7 @@ import (
 
 	"github.com/adrg/xdg"
 	"github.com/anchore/syft/internal"
-	"github.com/anchore/syft/syft/presenter"
+	"github.com/anchore/syft/internal/presenter/packages"
 	"github.com/anchore/syft/syft/source"
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
@@ -17,17 +17,17 @@ import (
 
 // Application is the main syft application configuration.
 type Application struct {
-	ConfigPath        string           `yaml:",omitempty"`                   // the location where the application config was read from (either from -c or discovered while loading)
-	PresenterOpt      presenter.Option `yaml:"-"`                            // -o, the native Presenter.Option to use for report formatting
-	Output            string           `yaml:"output" mapstructure:"output"` // -o, the Presenter hint string to use for report formatting
-	ScopeOpt          source.Scope     `yaml:"-"`                            // -s, the native source.Scope option to use for how to catalog the container image
-	Scope             string           `yaml:"scope" mapstructure:"scope"`   // -s, the source.Scope string hint for how to catalog the container image
-	Quiet             bool             `yaml:"quiet" mapstructure:"quiet"`   // -q, indicates to not show any status output to stderr (ETUI or logging UI)
-	Log               logging          `yaml:"log"  mapstructure:"log"`      // all logging-related options
-	CliOptions        CliOnlyOptions   `yaml:"-"`                            // all options only available through the CLI (not via env vars or config)
-	Dev               Development      `mapstructure:"dev"`
-	CheckForAppUpdate bool             `yaml:"check-for-app-update" mapstructure:"check-for-app-update"` // whether to check for an application update on start up or not
-	Anchore           anchore          `yaml:"anchore" mapstructure:"anchore"`                           // options for interacting with Anchore Engine/Enterprise
+	ConfigPath        string                   `yaml:",omitempty"`                   // the location where the application config was read from (either from -c or discovered while loading)
+	PresenterOpt      packages.PresenterOption `yaml:"-"`                            // -o, the native Presenter.PresenterOption to use for report formatting
+	Output            string                   `yaml:"output" mapstructure:"output"` // -o, the Presenter hint string to use for report formatting
+	ScopeOpt          source.Scope             `yaml:"-"`                            // -s, the native source.Scope option to use for how to catalog the container image
+	Scope             string                   `yaml:"scope" mapstructure:"scope"`   // -s, the source.Scope string hint for how to catalog the container image
+	Quiet             bool                     `yaml:"quiet" mapstructure:"quiet"`   // -q, indicates to not show any status output to stderr (ETUI or logging UI)
+	Log               logging                  `yaml:"log"  mapstructure:"log"`      // all logging-related options
+	CliOptions        CliOnlyOptions           `yaml:"-"`                            // all options only available through the CLI (not via env vars or config)
+	Dev               Development              `mapstructure:"dev"`
+	CheckForAppUpdate bool                     `yaml:"check-for-app-update" mapstructure:"check-for-app-update"` // whether to check for an application update on start up or not
+	Anchore           anchore                  `yaml:"anchore" mapstructure:"anchore"`                           // options for interacting with Anchore Engine/Enterprise
 }
 
 // CliOnlyOptions are options that are in the application config in memory, but are only exposed via CLI switches (not from unmarshaling a config file)
@@ -63,7 +63,7 @@ type Development struct {
 // LoadApplicationConfig populates the given viper object with application configuration discovered on disk
 func LoadApplicationConfig(v *viper.Viper, cliOpts CliOnlyOptions, wasHostnameSet bool) (*Application, error) {
 	// the user may not have a config, and this is OK, we can use the default config + default cobra cli values instead
-	setNonCliDefaultValues(v)
+	setNonCliDefaultAppConfigValues(v)
 	_ = readConfig(v, cliOpts.ConfigPath)
 
 	config := &Application{
@@ -76,7 +76,7 @@ func LoadApplicationConfig(v *viper.Viper, cliOpts CliOnlyOptions, wasHostnameSe
 	config.ConfigPath = v.ConfigFileUsed()
 
 	if err := config.build(v, wasHostnameSet); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
+		return nil, fmt.Errorf("invalid application config: %w", err)
 	}
 
 	return config, nil
@@ -85,13 +85,13 @@ func LoadApplicationConfig(v *viper.Viper, cliOpts CliOnlyOptions, wasHostnameSe
 // build inflates simple config values into syft native objects (or other complex objects) after the config is fully read in.
 func (cfg *Application) build(v *viper.Viper, wasHostnameSet bool) error {
 	// set the presenter
-	presenterOption := presenter.ParseOption(cfg.Output)
-	if presenterOption == presenter.UnknownPresenter {
+	presenterOption := packages.ParsePresenterOption(cfg.Output)
+	if presenterOption == packages.UnknownPresenterOption {
 		return fmt.Errorf("bad --output value '%s'", cfg.Output)
 	}
 	cfg.PresenterOpt = presenterOption
 
-	// set the source
+	// set the source scope
 	scopeOption := source.ParseScope(cfg.Scope)
 	if scopeOption == source.UnknownScope {
 		return fmt.Errorf("bad --scope value '%s'", cfg.Scope)
@@ -171,11 +171,11 @@ func readConfig(v *viper.Viper, configPath string) error {
 	// use explicitly the given user config
 	if configPath != "" {
 		v.SetConfigFile(configPath)
-		if err := v.ReadInConfig(); err == nil {
-			return nil
+		if err := v.ReadInConfig(); err != nil {
+			return fmt.Errorf("unable to read application config=%q : %w", configPath, err)
 		}
-		// don't fall through to other options if this fails
-		return fmt.Errorf("unable to read config: %v", configPath)
+		// don't fall through to other options if the config path was explicitly provided
+		return nil
 	}
 
 	// start searching for valid configs in order...
@@ -217,8 +217,8 @@ func readConfig(v *viper.Viper, configPath string) error {
 	return fmt.Errorf("application config not found")
 }
 
-// setNonCliDefaultValues ensures that there are sane defaults for values that do not have CLI equivalent options (where there would already be a default value)
-func setNonCliDefaultValues(v *viper.Viper) {
+// setNonCliDefaultAppConfigValues ensures that there are sane defaults for values that do not have CLI equivalent options (where there would already be a default value)
+func setNonCliDefaultAppConfigValues(v *viper.Viper) {
 	v.SetDefault("log.level", "")
 	v.SetDefault("log.file", "")
 	v.SetDefault("log.structured", false)
