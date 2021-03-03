@@ -72,7 +72,7 @@ func parseRpmDB(resolver source.FilePathResolver, dbLocation source.Location, re
 	return allPkgs, nil
 }
 
-func extractRpmdbFileRecords(resolver source.FilePathResolver, entry *rpmdb.PackageInfo) ([]pkg.RpmdbFileRecord, error) {
+func extractRpmdbFileRecords(resolver source.FilePathResolver, entry *rpmdb.PackageInfo) []pkg.RpmdbFileRecord {
 	var records = make([]pkg.RpmdbFileRecord, 0)
 
 	for _, record := range entry.Files {

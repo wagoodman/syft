@@ -35,10 +35,10 @@ func newImageSquashResolver(img *image.Image) (*ImageSquashResolver, error) {
 }
 
 func (r *ImageSquashResolver) HasFileLocation(l Location) bool {
-	if l.Reference.ID() == 0 {
+	if l.ref.ID() == 0 {
 		return false
 	}
-	return r.refs.Contains(l.Reference)
+	return r.refs.Contains(l.ref)
 }
 
 // HasPath indicates if the given path exists in the underlying source.
@@ -120,8 +120,8 @@ func (r *ImageSquashResolver) FilesByGlob(patterns ...string) ([]Location, error
 				return nil, fmt.Errorf("failed to find files by path (result=%+v): %w", result, err)
 			}
 			for _, resolvedLocation := range resolvedLocations {
-				if !uniqueFileIDs.Contains(resolvedLocation.Reference) {
-					uniqueFileIDs.Add(resolvedLocation.Reference)
+				if !uniqueFileIDs.Contains(resolvedLocation.ref) {
+					uniqueFileIDs.Add(resolvedLocation.ref)
 					uniqueLocations = append(uniqueLocations, resolvedLocation)
 				}
 			}
@@ -155,5 +155,5 @@ func (r *ImageSquashResolver) MultipleFileContentsByLocation(locations []Locatio
 // FileContentsByLocation fetches file contents for a single file reference, irregardless of the source layer.
 // If the path does not exist an error is returned.
 func (r *ImageSquashResolver) FileContentsByLocation(location Location) (io.ReadCloser, error) {
-	return r.img.FileContentsByRef(location.Reference)
+	return r.img.FileContentsByRef(location.ref)
 }

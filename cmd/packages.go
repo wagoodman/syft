@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
-
-	"github.com/anchore/syft/internal/presenter/packages"
 
 	"github.com/anchore/syft/internal"
 	"github.com/anchore/syft/internal/anchore"
 	"github.com/anchore/syft/internal/bus"
 	"github.com/anchore/syft/internal/log"
+	"github.com/anchore/syft/internal/presenter/packages"
 	"github.com/anchore/syft/internal/ui"
 	"github.com/anchore/syft/syft"
 	"github.com/anchore/syft/syft/distro"
@@ -233,19 +231,10 @@ func runPackageSbomUpload(src source.Source, s source.Metadata, catalog *pkg.Cat
 		}
 	}
 
-	var scheme string
-	var hostname = appConfig.Anchore.Host
-	urlFields := strings.Split(hostname, "://")
-	if len(urlFields) > 1 {
-		scheme = urlFields[0]
-		hostname = urlFields[1]
-	}
-
 	c, err := anchore.NewClient(anchore.Configuration{
-		Hostname: hostname,
+		BaseURL:  appConfig.Anchore.Host,
 		Username: appConfig.Anchore.Username,
 		Password: appConfig.Anchore.Password,
-		Scheme:   scheme,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create anchore client: %+v", err)

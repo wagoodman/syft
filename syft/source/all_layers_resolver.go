@@ -7,10 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/anchore/stereoscope/pkg/filetree"
-
-	"github.com/anchore/syft/internal/log"
-
 	"github.com/anchore/stereoscope/pkg/file"
 	"github.com/anchore/stereoscope/pkg/filetree"
 	"github.com/anchore/stereoscope/pkg/image"
@@ -185,7 +181,7 @@ func (r *AllLayersResolver) FilesByGlob(patterns ...string) ([]Location, error) 
 // RelativeFileByPath fetches a single file at the given path relative to the layer squash of the given reference.
 // This is helpful when attempting to find a file that is in the same layer or lower as another file.
 func (r *AllLayersResolver) RelativeFileByPath(location Location, path string) *Location {
-	entry, err := r.img.FileCatalog.Get(location.Reference)
+	entry, err := r.img.FileCatalog.Get(location.ref)
 	if err != nil {
 		return nil
 	}
@@ -213,7 +209,7 @@ func (r *AllLayersResolver) MultipleFileContentsByLocation(locations []Location)
 // FileContentsByLocation fetches file contents for a single file reference, irregardless of the source layer.
 // If the path does not exist an error is returned.
 func (r *AllLayersResolver) FileContentsByLocation(location Location) (io.ReadCloser, error) {
-	return r.img.FileContentsByRef(location.Reference)
+	return r.img.FileContentsByRef(location.ref)
 }
 
 type multiContentFetcher func(refs ...file.Reference) (map[file.Reference]io.ReadCloser, error)
