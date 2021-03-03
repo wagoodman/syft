@@ -3,25 +3,14 @@ package integration
 import (
 	"testing"
 
-	"github.com/anchore/stereoscope/pkg/imagetest"
 	"github.com/go-test/deep"
 
 	"github.com/anchore/syft/internal"
-	"github.com/anchore/syft/syft"
 	"github.com/anchore/syft/syft/pkg"
-	"github.com/anchore/syft/syft/source"
 )
 
 func TestPkgCoverageImage(t *testing.T) {
-	fixtureImageName := "image-pkg-coverage"
-	_, cleanup := imagetest.GetFixtureImage(t, "docker-archive", fixtureImageName)
-	tarPath := imagetest.GetFixtureImageTarPath(t, fixtureImageName)
-	defer cleanup()
-
-	_, catalog, _, err := syft.Catalog("docker-archive:"+tarPath, source.SquashedScope)
-	if err != nil {
-		t.Fatalf("failed to catalog image: %+v", err)
-	}
+	catalog, _, _ := catalogFixtureImage(t, "image-pkg-coverage")
 
 	observedLanguages := internal.NewStringSet()
 	definedLanguages := internal.NewStringSet()
@@ -100,11 +89,7 @@ func TestPkgCoverageImage(t *testing.T) {
 }
 
 func TestPkgCoverageDirectory(t *testing.T) {
-	_, catalog, _, err := syft.Catalog("dir:test-fixtures/image-pkg-coverage", source.SquashedScope)
-
-	if err != nil {
-		t.Errorf("unable to create source from dir: %+v", err)
-	}
+	catalog, _, _ := catalogDirectory(t, "test-fixtures/image-pkg-coverage")
 
 	observedLanguages := internal.NewStringSet()
 	definedLanguages := internal.NewStringSet()

@@ -9,14 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/anchore/syft/internal/presenter/packages"
+
 	"github.com/anchore/syft/internal"
 
+	"github.com/anchore/syft/internal/presenter"
 	"github.com/anchore/syft/syft/distro"
-	"github.com/anchore/syft/syft/presenter"
 
-	"github.com/anchore/stereoscope/pkg/imagetest"
-	"github.com/anchore/syft/syft"
-	"github.com/anchore/syft/syft/source"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -55,15 +54,7 @@ func validateAgainstV1Schema(t *testing.T, json string) {
 }
 
 func TestJsonSchemaImg(t *testing.T) {
-	fixtureImageName := "image-pkg-coverage"
-	_, cleanup := imagetest.GetFixtureImage(t, "docker-archive", fixtureImageName)
-	tarPath := imagetest.GetFixtureImageTarPath(t, fixtureImageName)
-	defer cleanup()
-
-	src, catalog, _, err := syft.Catalog("docker-archive:"+tarPath, source.SquashedScope)
-	if err != nil {
-		t.Fatalf("failed to catalog image: %+v", err)
-	}
+	catalog, _, src := catalogFixtureImage(t, "image-pkg-coverage")
 
 	output := bytes.NewBufferString("")
 
@@ -72,7 +63,7 @@ func TestJsonSchemaImg(t *testing.T) {
 		t.Fatalf("bad distro: %+v", err)
 	}
 
-	p := presenter.GetPresenter(presenter.JSONPresenter, src.Metadata, catalog, &d)
+	p := presenter.GetPresenter(packages.JSONPresenter, src.Metadata, catalog, &d)
 	if p == nil {
 		t.Fatal("unable to get presenter")
 	}
@@ -87,10 +78,7 @@ func TestJsonSchemaImg(t *testing.T) {
 }
 
 func TestJsonSchemaDirs(t *testing.T) {
-	src, catalog, _, err := syft.Catalog("dir:test-fixtures/image-pkg-coverage", source.SquashedScope)
-	if err != nil {
-		t.Errorf("unable to create source from dir: %+v", err)
-	}
+	catalog, _, src := catalogDirectory(t, "test-fixtures/image-pkg-coverage")
 
 	output := bytes.NewBufferString("")
 
@@ -99,7 +87,7 @@ func TestJsonSchemaDirs(t *testing.T) {
 		t.Fatalf("bad distro: %+v", err)
 	}
 
-	p := presenter.GetPresenter(presenter.JSONPresenter, src.Metadata, catalog, &d)
+	p := presenter.GetPresenter(packages.JSONPresenter, src.Metadata, catalog, &d)
 	if p == nil {
 		t.Fatal("unable to get presenter")
 	}

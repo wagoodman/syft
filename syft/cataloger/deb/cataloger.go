@@ -32,7 +32,7 @@ func (c *Cataloger) Name() string {
 
 // Catalog is given an object to resolve file references and content, this function returns any discovered Packages after analyzing dpkg support files.
 // nolint:funlen
-func (c *Cataloger) Catalog(resolver source.Resolver) ([]pkg.Package, error) {
+func (c *Cataloger) Catalog(resolver source.FileResolver) ([]pkg.Package, error) {
 	dbFileMatches, err := resolver.FilesByGlob(pkg.DpkgDbGlob)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find dpkg status files's by glob: %w", err)
@@ -98,7 +98,7 @@ func (c *Cataloger) Catalog(resolver source.Resolver) ([]pkg.Package, error) {
 	return pkgs, nil
 }
 
-func fetchMd5Contents(resolver source.Resolver, dbLocation source.Location, pkgs []pkg.Package) (map[string]io.Reader, map[string]source.Location, error) {
+func fetchMd5Contents(resolver source.FileResolver, dbLocation source.Location, pkgs []pkg.Package) (map[string]io.Reader, map[string]source.Location, error) {
 	// fetch all MD5 file contents. This approach is more efficient than fetching each MD5 file one at a time
 
 	var md5FileMatches []source.Location
@@ -140,7 +140,7 @@ func fetchMd5Contents(resolver source.Resolver, dbLocation source.Location, pkgs
 	return contentsByName, locationByName, nil
 }
 
-func fetchCopyrightContents(resolver source.Resolver, dbLocation source.Location, pkgs []pkg.Package) (map[string]io.Reader, map[string]source.Location, error) {
+func fetchCopyrightContents(resolver source.FileResolver, dbLocation source.Location, pkgs []pkg.Package) (map[string]io.Reader, map[string]source.Location, error) {
 	// fetch all copyright file contents. This approach is more efficient than fetching each copyright file one at a time
 
 	var copyrightFileMatches []source.Location

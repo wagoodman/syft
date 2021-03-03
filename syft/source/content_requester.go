@@ -31,7 +31,7 @@ func (r *ContentRequester) Add(data *FileData) {
 
 // Execute takes the previously provided source.Location's and resolves the file contents, storing the results within
 // the previously provided FileData objects.
-func (r *ContentRequester) Execute(resolver ContentResolver) error {
+func (r *ContentRequester) Execute(resolver FileContentResolver) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

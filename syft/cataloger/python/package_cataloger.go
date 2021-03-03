@@ -28,7 +28,7 @@ func (c *PackageCataloger) Name() string {
 }
 
 // Catalog is given an object to resolve file references and content, this function returns any discovered Packages after analyzing python egg and wheel installations.
-func (c *PackageCataloger) Catalog(resolver source.Resolver) ([]pkg.Package, error) {
+func (c *PackageCataloger) Catalog(resolver source.FileResolver) ([]pkg.Package, error) {
 	entries, err := c.getPackageEntries(resolver)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (c *PackageCataloger) Catalog(resolver source.Resolver) ([]pkg.Package, err
 }
 
 // getPackageEntries fetches the contents for all python packages within the given resolver.
-func (c *PackageCataloger) getPackageEntries(resolver source.Resolver) ([]*packageEntry, error) {
+func (c *PackageCataloger) getPackageEntries(resolver source.FileResolver) ([]*packageEntry, error) {
 	var metadataLocations []source.Location
 
 	// find all primary record paths

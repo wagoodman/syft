@@ -41,4 +41,5 @@ func NewLocationFromImage(virtualPath string, ref file.Reference, img *image.Ima
 		FileSystemID: entry.Layer.Metadata.Digest,
 		ref:          ref,
 	}
+	return l
 }

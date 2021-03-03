@@ -17,9 +17,7 @@ Similar to the cataloging process, Linux distribution identification is also per
 package syft
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/anchore/syft/internal/bus"
 	"github.com/anchore/syft/internal/log"
@@ -27,28 +25,21 @@ import (
 	"github.com/anchore/syft/syft/distro"
 	"github.com/anchore/syft/syft/logger"
 	"github.com/anchore/syft/syft/pkg"
-	jsonPresenter "github.com/anchore/syft/syft/presenter/json"
 	"github.com/anchore/syft/syft/source"
 	"github.com/wagoodman/go-partybus"
 )
 
-// Catalog the given image from a particular perspective (e.g. squashed source, all-layers source). Returns the discovered
-// set of packages, the identified Linux distribution, and the source object used to wrap the data source.
-func Catalog(userInput string, scope source.Scope) (source.Source, *pkg.Catalog, *distro.Distro, error) {
-	theSource, cleanup, err := source.New(userInput, scope)
-	defer cleanup()
+// CatalogPackages takes an inventory of packages from the given image from a particular perspective
+// (e.g. squashed source, all-layers source). Returns the discovered  set of packages, the identified Linux
+// distribution, and the source object used to wrap the data source.
+func CatalogPackages(theSource source.Source, scope source.Scope) (*pkg.Catalog, *distro.Distro, error) {
+	resolver, err := theSource.FileResolver(scope)
 	if err != nil {
-		return source.Source{}, nil, nil, err
+		return nil, nil, fmt.Errorf("unable to determine FileResolver while cataloging packages: %w", err)
 	}
 
-	catalog, theDistro, err := CatalogFromSource(theSource)
-	return theSource, catalog, theDistro, err
-}
-
-// CatalogFromSource is the same as Catalog() except the source.Source is explicitly provided by the user.
-func CatalogFromSource(theSource source.Source) (*pkg.Catalog, *distro.Distro, error) {
 	// find the distro
-	theDistro := distro.Identify(theSource.Resolver)
+	theDistro := distro.Identify(resolver)
 	if theDistro != nil {
 		log.Infof("identified distro: %s", theDistro.String())
 	} else {
@@ -68,43 +59,12 @@ func CatalogFromSource(theSource source.Source) (*pkg.Catalog, *distro.Distro, e
 		return nil, nil, fmt.Errorf("unable to determine cataloger set from scheme=%+v", theSource.Metadata.Scheme)
 	}
 
-	catalog, err := cataloger.Catalog(theSource.Resolver, theDistro, catalogers...)
+	catalog, err := cataloger.Catalog(resolver, theDistro, catalogers...)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return catalog, theDistro, nil
-}
-
-// CatalogFromJSON takes an existing syft report and generates native syft objects.
-func CatalogFromJSON(reader io.Reader) (source.Metadata, *pkg.Catalog, *distro.Distro, error) {
-	var doc jsonPresenter.Document
-	var err error
-	decoder := json.NewDecoder(reader)
-	if err := decoder.Decode(&doc); err != nil {
-		return source.Metadata{}, nil, nil, err
-	}
-
-	var pkgs = make([]pkg.Package, len(doc.Artifacts))
-	for i, a := range doc.Artifacts {
-		pkgs[i], err = a.ToPackage()
-		if err != nil {
-			return source.Metadata{}, nil, nil, err
-		}
-	}
-
-	catalog := pkg.NewCatalog(pkgs...)
-
-	var theDistro *distro.Distro
-	if doc.Distro.Name != "" {
-		d, err := distro.NewDistro(distro.Type(doc.Distro.Name), doc.Distro.Version, doc.Distro.IDLike)
-		if err != nil {
-			return source.Metadata{}, nil, nil, err
-		}
-		theDistro = &d
-	}
-
-	return doc.Source.ToSourceMetadata(), catalog, theDistro, nil
 }
 
 // SetLogger sets the logger object used for all syft logging calls.

@@ -85,7 +85,7 @@ func TestAllLayersResolver_FilesByPath(t *testing.T) {
 			img, cleanup := imagetest.GetFixtureImage(t, "docker-archive", "image-symlinks")
 			defer cleanup()
 
-			resolver, err := NewAllLayersResolver(img)
+			resolver, err := newAllLayersResolver(img)
 			if err != nil {
 				t.Fatalf("could not create resolver: %+v", err)
 			}
@@ -204,7 +204,7 @@ func TestAllLayersResolver_FilesByGlob(t *testing.T) {
 			img, cleanup := imagetest.GetFixtureImage(t, "docker-archive", "image-symlinks")
 			defer cleanup()
 
-			resolver, err := NewAllLayersResolver(img)
+			resolver, err := newAllLayersResolver(img)
 			if err != nil {
 				t.Fatalf("could not create resolver: %+v", err)
 			}

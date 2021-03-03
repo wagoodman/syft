@@ -12,7 +12,7 @@ import (
 	"github.com/bmatcuk/doublestar/v2"
 )
 
-var _ Resolver = (*DirectoryResolver)(nil)
+var _ FileResolver = (*DirectoryResolver)(nil)
 
 // DirectoryResolver implements path and content access for the directory data source.
 type DirectoryResolver struct {
@@ -34,9 +34,21 @@ func (r *DirectoryResolver) HasPath(userPath string) bool {
 	return !os.IsNotExist(err)
 }
 
+func newDirectoryResolver(path string) *DirectoryResolver {
+	return &DirectoryResolver{Path: path}
+}
+
 // Stringer to represent a directory path data source
 func (r DirectoryResolver) String() string {
 	return fmt.Sprintf("dir:%s", r.Path)
+}
+
+func (r *DirectoryResolver) HasFileLocation(l Location) bool {
+	locations, err := r.FilesByPath(l.RealPath)
+	if err != nil {
+		return false
+	}
+	return len(locations) > 0
 }
 
 // FilesByPath returns all file.References that match the given paths from the directory.

@@ -4,25 +4,22 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/pflag"
-
 	"github.com/anchore/stereoscope"
 	"github.com/anchore/syft/internal/config"
 	"github.com/anchore/syft/internal/log"
 	"github.com/anchore/syft/internal/logger"
 	"github.com/anchore/syft/syft"
-	"github.com/anchore/syft/syft/presenter"
-	"github.com/anchore/syft/syft/source"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
 )
 
-var appConfig *config.Application
-var eventBus *partybus.Bus
-var eventSubscription *partybus.Subscription
-var cliOpts = config.CliOnlyOptions{}
+var (
+	appConfig         *config.Application
+	eventBus          *partybus.Bus
+	eventSubscription *partybus.Subscription
+)
 
 func init() {
 	cobra.OnInitialize(
@@ -40,86 +37,10 @@ func Execute() {
 	}
 }
 
-func setSourceOptions(flags *pflag.FlagSet) {
-	flag := "scope"
-	flags.StringP(
-		"scope", "s", source.SquashedScope.String(),
-		fmt.Sprintf("selection of layers to catalog, options=%v", source.AllScopes))
-	if err := viper.BindPFlag(flag, flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
-	}
-}
-
-func setFormatOptions(flags *pflag.FlagSet) {
-	// output & formatting options
-	flag := "output"
-	flags.StringP(
-		flag, "o", string(presenter.TablePresenter),
-		fmt.Sprintf("report output formatter, options=%v", presenter.Options),
-	)
-	if err := viper.BindPFlag(flag, flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
-	}
-}
-
-func setUploadFlags(flags *pflag.FlagSet) {
-	flag := "host"
-	flags.StringP(
-		flag, "H", "",
-		"the hostname or URL of the Anchore Enterprise instance to upload to",
-	)
-	if err := viper.BindPFlag("anchore.host", flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
-	}
-
-	flag = "username"
-	flags.StringP(
-		flag, "u", "",
-		"the username to authenticate against Anchore Enterprise",
-	)
-	if err := viper.BindPFlag("anchore.username", flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
-	}
-
-	flag = "password"
-	flags.StringP(
-		flag, "p", "",
-		"the password to authenticate against Anchore Enterprise",
-	)
-	if err := viper.BindPFlag("anchore.password", flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
-	}
-
-	flag = "dockerfile"
-	flags.StringP(
-		flag, "d", "",
-		"include dockerfile for upload to Anchore Enterprise",
-	)
-	if err := viper.BindPFlag("anchore.dockerfile", flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '#{flag}': #{err}")
-		os.Exit(1)
-	}
-
-	flag = "overwrite-existing-image"
-	flags.Bool(
-		flag, false,
-		"overwrite an existing image during the upload to Anchore Enterprise",
-	)
-	if err := viper.BindPFlag("anchore.overwrite-existing-image", flags.Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '#{flag}': #{err}")
-		os.Exit(1)
-	}
-}
-
 func initAppConfig() {
 	cfgVehicle := viper.GetViper()
 	wasHostnameSet := rootCmd.Flags().Changed("host")
-	cfg, err := config.LoadApplicationConfig(cfgVehicle, cliOpts, wasHostnameSet)
+	cfg, err := config.LoadApplicationConfig(cfgVehicle, persistentOpts, wasHostnameSet)
 	if err != nil {
 		fmt.Printf("failed to load application config: \n\t%+v\n", err)
 		os.Exit(1)
@@ -145,7 +66,7 @@ func initLogging() {
 }
 
 func logAppConfig() {
-	log.Debugf("Application config:\n%+v", color.Magenta.Sprint(appConfig.String()))
+	log.Debugf("application config:\n%+v", color.Magenta.Sprint(appConfig.String()))
 }
 
 func initEventBus() {

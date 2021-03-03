@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wagoodman/go-progress"
+	"github.com/anchore/syft/internal/presenter/packages"
 
-	jsonPresenter "github.com/anchore/syft/syft/presenter/json"
+	"github.com/wagoodman/go-progress"
 
 	"github.com/anchore/syft/syft/distro"
 
@@ -89,19 +89,19 @@ func TestPackageSbomToModel(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	pres := jsonPresenter.NewPresenter(c, m, &d)
+	pres := packages.NewJSONPresenter(c, m, &d)
 	if err := pres.Present(&buf); err != nil {
 		t.Fatalf("unable to get expected json: %+v", err)
 	}
 
 	// unmarshal expected result
-	var expectedDoc jsonPresenter.Document
+	var expectedDoc packages.JSONDocument
 	if err := json.Unmarshal(buf.Bytes(), &expectedDoc); err != nil {
 		t.Fatalf("unable to parse json doc: %+v", err)
 	}
 
 	// unmarshal actual result
-	var actualDoc jsonPresenter.Document
+	var actualDoc packages.JSONDocument
 	if err := json.Unmarshal(modelJSON, &actualDoc); err != nil {
 		t.Fatalf("unable to parse json doc: %+v", err)
 	}

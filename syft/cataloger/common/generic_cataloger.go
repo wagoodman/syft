@@ -52,7 +52,7 @@ func (c *GenericCataloger) clear() {
 }
 
 // Catalog is given an object to resolve file references and content, this function returns any discovered Packages after analyzing the catalog source.
-func (c *GenericCataloger) Catalog(resolver source.Resolver) ([]pkg.Package, error) {
+func (c *GenericCataloger) Catalog(resolver source.FileResolver) ([]pkg.Package, error) {
 	fileSelection := c.selectFiles(resolver)
 	contents, err := resolver.MultipleFileContentsByLocation(fileSelection)
 	if err != nil {
@@ -62,7 +62,7 @@ func (c *GenericCataloger) Catalog(resolver source.Resolver) ([]pkg.Package, err
 }
 
 // SelectFiles takes a set of file trees and resolves and file references of interest for future cataloging
-func (c *GenericCataloger) selectFiles(resolver source.FileResolver) []source.Location {
+func (c *GenericCataloger) selectFiles(resolver source.FilePathResolver) []source.Location {
 	// select by exact path
 	for path, parser := range c.pathParsers {
 		files, err := resolver.FilesByPath(path)

@@ -4,26 +4,41 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/anchore/stereoscope/pkg/filetree"
-
 	"github.com/anchore/stereoscope/pkg/file"
 	"github.com/anchore/stereoscope/pkg/filetree"
 	"github.com/anchore/stereoscope/pkg/image"
 )
 
-var _ Resolver = (*ImageSquashResolver)(nil)
+var _ FileResolver = (*ImageSquashResolver)(nil)
 
 // ImageSquashResolver implements path and content access for the Squashed source option for container image data sources.
 type ImageSquashResolver struct {
-	img *image.Image
+	img  *image.Image
+	refs file.ReferenceSet
 }
 
-// NewImageSquashResolver returns a new resolver from the perspective of the squashed representation for the given image.
-func NewImageSquashResolver(img *image.Image) (*ImageSquashResolver, error) {
+// newImageSquashResolver returns a new resolver from the perspective of the squashed representation for the given image.
+func newImageSquashResolver(img *image.Image) (*ImageSquashResolver, error) {
 	if img.SquashedTree() == nil {
 		return nil, fmt.Errorf("the image does not have have a squashed tree")
 	}
-	return &ImageSquashResolver{img: img}, nil
+
+	refs := file.NewFileReferenceSet()
+	for _, r := range img.SquashedTree().AllFiles() {
+		refs.Add(r)
+	}
+
+	return &ImageSquashResolver{
+		img:  img,
+		refs: refs,
+	}, nil
+}
+
+func (r *ImageSquashResolver) HasFileLocation(l Location) bool {
+	if l.Reference.ID() == 0 {
+		return false
+	}
+	return r.refs.Contains(l.Reference)
 }
 
 // HasPath indicates if the given path exists in the underlying source.

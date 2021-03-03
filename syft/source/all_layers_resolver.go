@@ -17,18 +17,26 @@ import (
 	"github.com/anchore/syft/internal/log"
 )
 
-var _ Resolver = (*AllLayersResolver)(nil)
+var _ FileResolver = (*AllLayersResolver)(nil)
 
 // AllLayersResolver implements path and content access for the AllLayers source option for container image data sources.
 type AllLayersResolver struct {
 	img    *image.Image
 	layers []int
+	refs   file.ReferenceSet
 }
 
-// NewAllLayersResolver returns a new resolver from the perspective of all image layers for the given image.
-func NewAllLayersResolver(img *image.Image) (*AllLayersResolver, error) {
+// newAllLayersResolver returns a new resolver from the perspective of all image layers for the given image.
+func newAllLayersResolver(img *image.Image) (*AllLayersResolver, error) {
 	if len(img.Layers) == 0 {
 		return nil, fmt.Errorf("the image does not contain any layers")
+	}
+
+	refs := file.NewFileReferenceSet()
+	for _, l := range img.Layers {
+		for _, r := range l.Tree.AllFiles() {
+			refs.Add(r)
+		}
 	}
 
 	var layers = make([]int, 0)
@@ -38,6 +46,7 @@ func NewAllLayersResolver(img *image.Image) (*AllLayersResolver, error) {
 	return &AllLayersResolver{
 		img:    img,
 		layers: layers,
+		refs:   refs,
 	}, nil
 }
 
@@ -51,6 +60,13 @@ func (r *AllLayersResolver) HasPath(path string) bool {
 		}
 	}
 	return false
+}
+
+func (r *AllLayersResolver) HasFileLocation(l Location) bool {
+	if l.ref.ID() == 0 {
+		return false
+	}
+	return r.refs.Contains(l.ref)
 }
 
 func (r *AllLayersResolver) fileByRef(ref file.Reference, uniqueFileIDs file.ReferenceSet, layerIdx int) ([]file.Reference, error) {

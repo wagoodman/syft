@@ -12,8 +12,8 @@ type packageEntry struct {
 	TopPackage *source.FileData
 }
 
-// newPackageEntry returns a new packageEntry to be processed relative to what information is available in the given FileResolver.
-func newPackageEntry(resolver source.FileResolver, metadataLocation source.Location) *packageEntry {
+// newPackageEntry returns a new packageEntry to be processed relative to what information is available in the given FilePathResolver.
+func newPackageEntry(resolver source.FilePathResolver, metadataLocation source.Location) *packageEntry {
 	// we've been given a file reference to a specific wheel METADATA file. note: this may be for a directory
 	// or for an image... for an image the METADATA file may be present within multiple layers, so it is important
 	// to reconcile the RECORD path to the same layer (or a lower layer). The same is true with the top_level.txt file.

@@ -8,9 +8,9 @@ import (
 	"github.com/anchore/syft/internal/file"
 )
 
-var _ Resolver = (*MockResolver)(nil)
+var _ FileResolver = (*MockResolver)(nil)
 
-// MockResolver implements the Resolver interface and is intended for use *only in test code*.
+// MockResolver implements the FileResolver interface and is intended for use *only in test code*.
 // It provides an implementation that can resolve local filesystem paths using only a provided discrete list of file
 // paths, which are typically paths to test fixtures.
 type MockResolver struct {
@@ -32,6 +32,15 @@ func NewMockResolverForPaths(paths ...string) *MockResolver {
 func (r MockResolver) HasPath(path string) bool {
 	for _, l := range r.Locations {
 		if l.RealPath == path {
+			return true
+		}
+	}
+	return false
+}
+
+func (r MockResolver) HasFileLocation(l Location) bool {
+	for _, loc := range r.Locations {
+		if l.ref.ID() == loc.ref.ID() {
 			return true
 		}
 	}
