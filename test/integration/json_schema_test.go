@@ -63,7 +63,11 @@ func TestJsonSchemaImg(t *testing.T) {
 		t.Fatalf("bad distro: %+v", err)
 	}
 
-	p := packages.Presenter(packages.JSONPresenterOption, src.Metadata, catalog, &d)
+	p := packages.Presenter(packages.JSONPresenterOption, packages.PresenterConfig{
+		SourceMetadata: src.Metadata,
+		Catalog:        catalog,
+		Distro:         &d,
+	})
 	if p == nil {
 		t.Fatal("unable to get presenter")
 	}
@@ -87,7 +91,11 @@ func TestJsonSchemaDirs(t *testing.T) {
 		t.Fatalf("bad distro: %+v", err)
 	}
 
-	p := packages.Presenter(packages.JSONPresenterOption, src.Metadata, catalog, &d)
+	p := packages.Presenter(packages.JSONPresenterOption, packages.PresenterConfig{
+		SourceMetadata: src.Metadata,
+		Catalog:        catalog,
+		Distro:         &d,
+	})
 	if p == nil {
 		t.Fatal("unable to get presenter")
 	}

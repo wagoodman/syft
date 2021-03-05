@@ -15,7 +15,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-var update = flag.Bool("update", false, "update the *.golden files for json presenters")
+var updateJsonGoldenFiles = flag.Bool("update-json", false, "update the *.golden files for json presenters")
 
 func must(c pkg.CPE, e error) pkg.CPE {
 	if e != nil {
@@ -75,7 +75,7 @@ func TestJsonDirsPresenter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pres := NewJsonPresenter(catalog, s.Metadata, d)
+	pres := NewJsonPresenter(catalog, s.Metadata, d, source.SquashedScope)
 
 	// run presenter
 	err = pres.Present(&buffer)
@@ -84,7 +84,7 @@ func TestJsonDirsPresenter(t *testing.T) {
 	}
 	actual := buffer.Bytes()
 
-	if *update {
+	if *updateJsonGoldenFiles {
 		testutils.UpdateGoldenFileContents(t, actual)
 	}
 
@@ -103,7 +103,7 @@ func TestJsonImgsPresenter(t *testing.T) {
 
 	testImage := "image-simple"
 
-	if *update {
+	if *updateJsonGoldenFiles {
 		imagetest.UpdateGoldenFixtureImage(t, testImage)
 	}
 
@@ -158,9 +158,9 @@ func TestJsonImgsPresenter(t *testing.T) {
 	// this is a hard coded value that is not given by the fixture helper and must be provided manually
 	img.Metadata.ManifestDigest = "sha256:2731251dc34951c0e50fcc643b4c5f74922dad1a5d98f302b504cf46cd5d9368"
 
-	s, err := source.NewFromImage(img, source.SquashedScope, "user-image-input")
+	s, err := source.NewFromImage(img, "user-image-input")
 	var d *distro.Distro
-	pres := NewJsonPresenter(catalog, s.Metadata, d)
+	pres := NewJsonPresenter(catalog, s.Metadata, d, source.SquashedScope)
 
 	// run presenter
 	err = pres.Present(&buffer)
@@ -169,7 +169,7 @@ func TestJsonImgsPresenter(t *testing.T) {
 	}
 	actual := buffer.Bytes()
 
-	if *update {
+	if *updateJsonGoldenFiles {
 		testutils.UpdateGoldenFileContents(t, actual)
 	}
 

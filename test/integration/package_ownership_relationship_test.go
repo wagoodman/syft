@@ -23,13 +23,17 @@ func TestPackageOwnershipRelationships(t *testing.T) {
 		t.Run(test.fixture, func(t *testing.T) {
 			catalog, d, src := catalogFixtureImage(t, test.fixture)
 
-			p := packages.Presenter(packages.JSONPresenterOption, src.Metadata, catalog, d)
+			p := packages.Presenter(packages.JSONPresenterOption, packages.PresenterConfig{
+				SourceMetadata: src.Metadata,
+				Catalog:        catalog,
+				Distro:         d,
+			})
 			if p == nil {
 				t.Fatal("unable to get presenter")
 			}
 
 			output := bytes.NewBufferString("")
-			err = p.Present(output)
+			err := p.Present(output)
 			if err != nil {
 				t.Fatalf("unable to present: %+v", err)
 			}

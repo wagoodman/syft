@@ -19,13 +19,21 @@ type jsonSourceUnpacker struct {
 	Target json.RawMessage `json:"target"`
 }
 
+type JsonImageMetadata struct {
+	Scope source.Scope
+	source.ImageMetadata
+}
+
 // NewJsonSource creates a new source object to be represented into JSON.
-func NewJsonSource(src source.Metadata) (JsonSource, error) {
+func NewJsonSource(src source.Metadata, scope source.Scope) (JsonSource, error) {
 	switch src.Scheme {
 	case source.ImageScheme:
 		return JsonSource{
-			Type:   "image",
-			Target: src.ImageMetadata,
+			Type: "image",
+			Target: JsonImageMetadata{
+				Scope:         scope,
+				ImageMetadata: src.ImageMetadata,
+			},
 		}, nil
 	case source.DirectoryScheme:
 		return JsonSource{

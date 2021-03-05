@@ -12,7 +12,7 @@ import (
 func Presenter(option PresenterOption, config PresenterConfig) presenter.Presenter {
 	switch option {
 	case JSONPresenterOption:
-		return NewJsonPresenter(config.Catalog, config.SourceMetadata, config.Distro)
+		return NewJsonPresenter(config.Catalog, config.SourceMetadata, config.Distro, config.Scope)
 	case TextPresenterOption:
 		return NewTextPresenter(config.Catalog, config.SourceMetadata)
 	case TablePresenterOption:

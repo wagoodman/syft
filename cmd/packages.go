@@ -189,7 +189,7 @@ func packagesExecWorker(userInput string) <-chan error {
 		}
 
 		if appConfig.Anchore.UploadEnabled {
-			if err := runPackageSbomUpload(src, src.Metadata, catalog, d); err != nil {
+			if err := runPackageSbomUpload(src, src.Metadata, catalog, d, appConfig.ScopeOpt); err != nil {
 				errs <- err
 				return
 			}
@@ -201,13 +201,14 @@ func packagesExecWorker(userInput string) <-chan error {
 				SourceMetadata: src.Metadata,
 				Catalog:        catalog,
 				Distro:         d,
+				Scope:          appConfig.ScopeOpt,
 			}),
 		})
 	}()
 	return errs
 }
 
-func runPackageSbomUpload(src source.Source, s source.Metadata, catalog *pkg.Catalog, d *distro.Distro) error {
+func runPackageSbomUpload(src source.Source, s source.Metadata, catalog *pkg.Catalog, d *distro.Distro, scope source.Scope) error {
 	log.Infof("uploading results to %s", appConfig.Anchore.Host)
 
 	if src.Metadata.Scheme != source.ImageScheme {
@@ -247,6 +248,7 @@ func runPackageSbomUpload(src source.Source, s source.Metadata, catalog *pkg.Cat
 		Distro:                  d,
 		Dockerfile:              dockerfileContents,
 		OverwriteExistingUpload: appConfig.Anchore.OverwriteExistingImage,
+		Scope:                   scope,
 	}
 
 	if err := c.Import(context.Background(), importCfg); err != nil {

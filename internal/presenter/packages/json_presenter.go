@@ -14,20 +14,22 @@ type JsonPresenter struct {
 	catalog     *pkg.Catalog
 	srcMetadata source.Metadata
 	distro      *distro.Distro
+	scope       source.Scope
 }
 
 // NewJsonPresenter creates a new JSON presenter object for the given cataloging results.
-func NewJsonPresenter(catalog *pkg.Catalog, s source.Metadata, d *distro.Distro) *JsonPresenter {
+func NewJsonPresenter(catalog *pkg.Catalog, s source.Metadata, d *distro.Distro, scope source.Scope) *JsonPresenter {
 	return &JsonPresenter{
 		catalog:     catalog,
 		srcMetadata: s,
 		distro:      d,
+		scope:       scope,
 	}
 }
 
 // Present the catalog results to the given writer.
 func (pres *JsonPresenter) Present(output io.Writer) error {
-	doc, err := NewJsonDocument(pres.catalog, pres.srcMetadata, pres.distro)
+	doc, err := NewJsonDocument(pres.catalog, pres.srcMetadata, pres.distro, pres.scope)
 	if err != nil {
 		return err
 	}

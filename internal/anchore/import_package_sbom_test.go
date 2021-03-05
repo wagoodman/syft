@@ -38,7 +38,6 @@ func TestPackageSbomToModel(t *testing.T) {
 		Scheme: source.ImageScheme,
 		ImageMetadata: source.ImageMetadata{
 			UserInput: "user-in",
-			Scope:     "scope!",
 			Layers: []source.LayerMetadata{
 				{
 					MediaType: "layer-metadata-type!",
@@ -76,7 +75,7 @@ func TestPackageSbomToModel(t *testing.T) {
 
 	c := pkg.NewCatalog(p)
 
-	model, err := packageSbomModel(m, c, &d)
+	model, err := packageSbomModel(m, c, &d, source.AllLayersScope)
 	if err != nil {
 		t.Fatalf("unable to generate model from source material: %+v", err)
 	}
@@ -89,7 +88,7 @@ func TestPackageSbomToModel(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	pres := packages.NewJsonPresenter(c, m, &d)
+	pres := packages.NewJsonPresenter(c, m, &d, source.AllLayersScope)
 	if err := pres.Present(&buf); err != nil {
 		t.Fatalf("unable to get expected json: %+v", err)
 	}
@@ -181,7 +180,6 @@ func TestPackageSbomImport(t *testing.T) {
 		Scheme: "a-schema",
 		ImageMetadata: source.ImageMetadata{
 			UserInput:      "user-in",
-			Scope:          "scope!",
 			Layers:         nil,
 			Size:           10,
 			ManifestDigest: "sha256:digest!",
@@ -192,7 +190,7 @@ func TestPackageSbomImport(t *testing.T) {
 
 	d, _ := distro.NewDistro(distro.CentOS, "8.0", "")
 
-	theModel, err := packageSbomModel(m, catalog, &d)
+	theModel, err := packageSbomModel(m, catalog, &d, source.AllLayersScope)
 	if err != nil {
 		t.Fatalf("could not get sbom model: %+v", err)
 	}
@@ -231,7 +229,7 @@ func TestPackageSbomImport(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			digest, err := importPackageSBOM(context.TODO(), test.api, sessionID, m, catalog, &d, &progress.Stage{})
+			digest, err := importPackageSBOM(context.TODO(), test.api, sessionID, m, catalog, &d, source.AllLayersScope, &progress.Stage{})
 
 			// validate error handling
 			if err != nil && !test.expectsError {

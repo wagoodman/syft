@@ -12,18 +12,7 @@ import (
 
 func TestNewFromImageFails(t *testing.T) {
 	t.Run("no image given", func(t *testing.T) {
-		_, err := NewFromImage(nil, AllLayersScope, "")
-		if err == nil {
-			t.Errorf("expected an error condition but none was given")
-		}
-	})
-}
-
-func TestNewFromImageUnknownOption(t *testing.T) {
-	img := image.Image{}
-
-	t.Run("unknown option is an error", func(t *testing.T) {
-		_, err := NewFromImage(&img, UnknownScope, "")
+		_, err := NewFromImage(nil, "")
 		if err == nil {
 			t.Errorf("expected an error condition but none was given")
 		}
@@ -37,7 +26,7 @@ func TestNewFromImage(t *testing.T) {
 	}
 
 	t.Run("create a new source object from image", func(t *testing.T) {
-		_, err := NewFromImage(&img, AllLayersScope, "")
+		_, err := NewFromImage(&img, "")
 		if err != nil {
 			t.Errorf("unexpected error when creating a new Locations from img: %+v", err)
 		}
@@ -87,8 +76,11 @@ func TestNewFromDirectory(t *testing.T) {
 			if src.Metadata.Path != test.input {
 				t.Errorf("mismatched stringer: '%s' != '%s'", src.Metadata.Path, test.input)
 			}
-
-			refs, err := src.Resolver.FilesByPath(test.inputPaths...)
+			resolver, err := src.FileResolver(SquashedScope)
+			if err != nil {
+				t.Errorf("could not get resolver error: %+v", err)
+			}
+			refs, err := resolver.FilesByPath(test.inputPaths...)
 			if err != nil {
 				t.Errorf("FilesByPath call produced an error: %+v", err)
 			}
@@ -123,11 +115,15 @@ func TestMultipleFileContentsByLocation(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.desc, func(t *testing.T) {
-			p, err := NewFromDirectory(test.input)
+			src, err := NewFromDirectory(test.input)
 			if err != nil {
 				t.Errorf("could not create NewDirScope: %+v", err)
 			}
-			locations, err := p.Resolver.FilesByPath(test.path)
+			resolver, err := src.FileResolver(SquashedScope)
+			if err != nil {
+				t.Errorf("could not get resolver error: %+v", err)
+			}
+			locations, err := resolver.FilesByPath(test.path)
 			if err != nil {
 				t.Errorf("could not get file references from path: %s, %v", test.path, err)
 			}
@@ -137,7 +133,7 @@ func TestMultipleFileContentsByLocation(t *testing.T) {
 			}
 			location := locations[0]
 
-			contents, err := p.Resolver.MultipleFileContentsByLocation([]Location{location})
+			contents, err := resolver.MultipleFileContentsByLocation([]Location{location})
 			contentReader := contents[location]
 
 			content, err := ioutil.ReadAll(contentReader)
@@ -168,11 +164,15 @@ func TestFilesByPathDoesNotExist(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.desc, func(t *testing.T) {
-			p, err := NewFromDirectory(test.input)
+			src, err := NewFromDirectory(test.input)
 			if err != nil {
 				t.Errorf("could not create NewDirScope: %+v", err)
 			}
-			refs, err := p.Resolver.FilesByPath(test.path)
+			resolver, err := src.FileResolver(SquashedScope)
+			if err != nil {
+				t.Errorf("could not get resolver error: %+v", err)
+			}
+			refs, err := resolver.FilesByPath(test.path)
 			if err != nil {
 				t.Errorf("could not get file references from path: %s, %v", test.path, err)
 			}
@@ -213,12 +213,15 @@ func TestFilesByGlob(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.desc, func(t *testing.T) {
-			p, err := NewFromDirectory(test.input)
+			src, err := NewFromDirectory(test.input)
 			if err != nil {
 				t.Errorf("could not create NewDirScope: %+v", err)
 			}
-
-			contents, err := p.Resolver.FilesByGlob(test.glob)
+			resolver, err := src.FileResolver(SquashedScope)
+			if err != nil {
+				t.Errorf("could not get resolver error: %+v", err)
+			}
+			contents, err := resolver.FilesByGlob(test.glob)
 
 			if len(contents) != test.expected {
 				t.Errorf("unexpected number of files found by glob (%s): %d != %d", test.glob, len(contents), test.expected)

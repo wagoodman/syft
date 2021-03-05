@@ -54,14 +54,19 @@ func TestDpkgCataloger(t *testing.T) {
 			img, cleanup := imagetest.GetFixtureImage(t, "docker-archive", "image-dpkg")
 			defer cleanup()
 
-			s, err := source.NewFromImage(img, source.SquashedScope, "")
+			s, err := source.NewFromImage(img, "")
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			c := NewDpkgdbCataloger()
 
-			actual, err := c.Catalog(s.Resolver)
+			resolver, err := s.FileResolver(source.SquashedScope)
+			if err != nil {
+				t.Errorf("could not get resolver error: %+v", err)
+			}
+
+			actual, err := c.Catalog(resolver)
 			if err != nil {
 				t.Fatalf("failed to catalog: %+v", err)
 			}

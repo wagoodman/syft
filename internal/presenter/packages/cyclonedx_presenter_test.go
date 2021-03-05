@@ -125,7 +125,7 @@ func TestCycloneDxImgsPresenter(t *testing.T) {
 		PURL: "the-purl-2",
 	})
 
-	s, err := source.NewFromImage(img, source.SquashedScope, "user-image-input")
+	s, err := source.NewFromImage(img, "user-image-input")
 	if err != nil {
 		t.Fatal(err)
 	}
