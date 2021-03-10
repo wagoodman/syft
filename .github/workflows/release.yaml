@@ -13,6 +13,7 @@ env:
 
 jobs:
   quality-gate:
+    name: "Quality gate"
     environment: release
     runs-on: ubuntu-latest # This OS choice is arbitrary. None of the steps in this job are specific to either Linux or macOS.
     steps:
@@ -92,6 +93,7 @@ jobs:
           false
 
   build-assets-mac:
+    name: "Build assets (Mac)"
     needs: [ quality-gate ]
     runs-on: macos-latest # Due to our code signing process, it's vital that we run these release steps on macOS.
     steps:
@@ -131,6 +133,7 @@ jobs:
           path: "./dist/*_darwin_*.*"
 
   build-assets-linux:
+    name: "Build assets (Linux)"
     needs: [ quality-gate ]
     runs-on: ubuntu-latest
     steps:
@@ -184,6 +187,7 @@ jobs:
             ./dist/*_checksums.*
 
   draft-release:
+    name: "Create draft release"
     needs: [ build-assets-mac, build-assets-linux ]
     runs-on: ubuntu-latest
     steps:
@@ -247,3 +251,22 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TOOLBOX_WEBHOOK_URL }}
         if: ${{ success() }}
+
+  notify-on-failure:
+    name: Notify on failure
+    needs: [draft-release]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      # obtain the workflow conclusion via env (env.WORKFLOW_CONCLUSION)
+      # values: neutral, success, skipped, cancelled, timed_out, action_required, failure
+      - uses: technote-space/workflow-conclusion-action@v2
+
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          fields: repo,workflow,job,commit,message,author
+          text: The syft release pipeline has failed
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TOOLBOX_WEBHOOK_URL }}
+        if: env.WORKFLOW_CONCLUSION == 'failure'

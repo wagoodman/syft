@@ -346,6 +346,7 @@ changelog-unreleased: ## show the current changelog that will be produced on the
 .SILENT: homebrew-formula-generate
 homebrew-formula-generate:
 	$(call title,Generating homebrew formula)
+	mkdir -p $(DISTDIR)
 	.github/scripts/homebrew-formula-generate.sh \
 		"$(VERSION_TAG)" \
 		"$(HOMEBREW_FORMULA_FILE)"
@@ -387,15 +388,22 @@ homebrew-formula-publish:
 .SILENT: version-check-update
 version-check-update:
 	$(call title,Updating version check)
-
+	mkdir -p $(DISTDIR)
 	# upload the version file that supports the application version update check (excluding pre-releases)
 	.github/scripts/update-version-file.sh "$(DISTDIR)" "$(VERSION_TAG)"
 
+.PHONY: version-check-update
+.SILENT: version-check-update
+wait-for-release-publish:
+	$(call title,Waiting for $(VERSION_TAG) release to be published)
+
+	.github/scripts/wait-for-release-publish.sh "$(VERSION_TAG)"
+
 .PHONY: stage-released-linux-artifact
 stage-released-linux-artifact:
-	mkdir -p ./$(DISTDIR)/syft_linux_amd64
-	curl -L -o ./$(DISTDIR)/syft.tar.gz https://github.com/anchore/syft/releases/download/$(VERSION_TAG)/syft_$(VERSION)_linux_amd64.tar.gz
-	tar -C ./$(DISTDIR)/syft_linux_amd64 -xvf ./$(DISTDIR)/syft.tar.gz syft
+	mkdir -p $(DISTDIR)/syft_linux_amd64
+	curl -L -o $(DISTDIR)/syft.tar.gz https://github.com/anchore/syft/releases/download/$(VERSION_TAG)/syft_$(VERSION)_linux_amd64.tar.gz
+	tar -C $(DISTDIR)/syft_linux_amd64 -xvf $(DISTDIR)/syft.tar.gz syft
 
 .PHONY: container-image-build
 .SILENT: container-image-build

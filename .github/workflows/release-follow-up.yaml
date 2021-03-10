@@ -5,6 +5,7 @@ on:
 
 jobs:
   create-homebrew-formula:
+    name: Create homebrew formula
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,6 +18,7 @@ jobs:
           path: "./dist/syft.rb"
 
   test-formula-linux:
+    name: Test homebrew formula (Linux)
     runs-on: ubuntu-latest
     needs: create-homebrew-formula
     steps:
@@ -28,6 +30,7 @@ jobs:
         run: make homebrew-formula-test
 
   test-formula-mac:
+    name: Test homebrew formula (Mac)
     runs-on: macos-latest
     needs: create-homebrew-formula
     steps:
@@ -39,6 +42,7 @@ jobs:
         run: make homebrew-formula-test
 
   publish-formula:
+    name: Publish homebrew formula
     runs-on: ubuntu-latest
     needs: [ test-formula-linux, test-formula-mac ]
     steps:
@@ -48,6 +52,7 @@ jobs:
         run: homebrew-formula-publish
 
   update_version_check_file:
+    name: Update version file
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -59,8 +64,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TOOLBOX_AWS_SECRET_ACCESS_KEY }}
 
   build_and_push_container_image:
+    name: Build, test, and publish container image
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -78,3 +86,22 @@ jobs:
 
       - name: Push Docker images
         run: make container-image-push
+
+  notify-on-failure:
+    name: Notify on failure
+    needs: [build_and_push_container_image, update_version_check_file, publish-formula]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      # obtain the workflow conclusion via env (env.WORKFLOW_CONCLUSION)
+      # values: neutral, success, skipped, cancelled, timed_out, action_required, failure
+      - uses: technote-space/workflow-conclusion-action@v2
+
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          fields: repo,workflow,job,commit,message,author
+          text: The syft release-follow-up pipeline has failed
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TOOLBOX_WEBHOOK_URL }}
+        if: env.WORKFLOW_CONCLUSION == 'failure' # notify only if failure
