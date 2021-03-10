@@ -41,7 +41,9 @@ pushd "${DISTDIR}"
   CHECKSUMS_FILE="${BIN}_${VERSION}_checksums.txt"
   echo "" > "$CHECKSUMS_FILE"
   for file in ./*linux*.*; do
-    openssl dgst -sha256 "$file" >> "$CHECKSUMS_FILE"
+    # note: the install.sh script verifies downloaded payloads with the published checksums file
+    # which requires a format of "SHA  FILE\n" for each file in the release (coreutils format).
+    openssl dgst -sha256 -r "$file" >> "$CHECKSUMS_FILE"
   done
   gpg --detach-sign "$CHECKSUMS_FILE"
 popd
