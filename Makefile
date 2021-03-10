@@ -357,10 +357,10 @@ homebrew-formula-test: bootstrap
 	$(call title,Testing homebrew formula)
 
 	echo "Cleaning up any versions of $(BIN) previously installed by $(BREW_CMD)"
-	$(BREW_CMD) uninstall --force "$(HOMEBREW_FORMULA_FILE)"
+	$(BREW_CMD) uninstall -v --force "$(HOMEBREW_FORMULA_FILE)"
 
 	echo "Testing homebrew installation using formula"
-	$(BREW_CMD) install --formula "$(HOMEBREW_FORMULA_FILE)"
+	$(BREW_CMD) install -v --formula "$(HOMEBREW_FORMULA_FILE)"
 
 	INSTALLED_BIN="$(BREW_BIN_DIR)/$(BIN)" && \
 	echo "Now running '$${INSTALLED_BIN} version':" && \
