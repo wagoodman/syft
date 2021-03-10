@@ -403,7 +403,7 @@ wait-for-release-publish:
 stage-released-linux-artifact:
 	mkdir -p $(DISTDIR)/syft_linux_amd64
 	curl -L -o $(DISTDIR)/syft.tar.gz https://github.com/anchore/syft/releases/download/$(VERSION_TAG)/syft_$(VERSION)_linux_amd64.tar.gz
-	tar -C $(DISTDIR)/syft_linux_amd64 -xvf $(DISTDIR)/syft.tar.gz syft
+	tar -C $(DISTDIR)/syft_linux_amd64 -xvf $(DISTDIR)/syft.tar.gz
 
 .PHONY: container-image-build
 .SILENT: container-image-build
