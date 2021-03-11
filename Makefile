@@ -353,7 +353,7 @@ homebrew-formula-generate:
 
 .PHONY: homebrew-formula-test
 .SILENT: homebrew-formula-test
-homebrew-formula-test: bootstrap
+homebrew-formula-test:
 	$(call title,Testing homebrew formula)
 
 	echo "Cleaning up any versions of $(BIN) previously installed by $(BREW_CMD)"
