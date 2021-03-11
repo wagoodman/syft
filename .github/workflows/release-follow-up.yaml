@@ -32,6 +32,11 @@ jobs:
       - name: Generate homebrew formula
         run: make homebrew-formula-generate
 
+      - name: Set git configuration
+        run: |
+          git config user.name syft-release-pipeline
+          git config user.email syft-release-pipeline@anchore.com
+
       - name: Publish updated homebrew formula
         run: make homebrew-formula-publish
         env:
