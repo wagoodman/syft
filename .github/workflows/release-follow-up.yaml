@@ -34,6 +34,8 @@ jobs:
 
       - name: Publish updated homebrew formula
         run: make homebrew-formula-publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.ANCHORE_GIT_READ_TOKEN }}
 
   update_version_check_file:
     name: Update version file
