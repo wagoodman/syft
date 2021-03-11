@@ -231,6 +231,12 @@ snapshot:
 		$(VERSION) \
 		$(TEMPDIR)
 
+.PHONY: save-accptance-test-image
+save-acceptance-test-image:
+	# this is to get around the dockerhub pull throttling
+	docker image pull $(ACC_TEST_IMAGE)
+	docker image save $(ACC_TEST_IMAGE) -o $(TEMPDIR)/acceptance-image.tar
+
 .PHONY: acceptance-mac
 acceptance-mac: ## Run acceptance tests on built binaries (Mac)
 	$(call title,Running acceptance test: Run on Mac)
@@ -238,7 +244,8 @@ acceptance-mac: ## Run acceptance tests on built binaries (Mac)
 			$(SNAPSHOTDIR) \
 			$(ACC_DIR) \
 			$(ACC_TEST_IMAGE) \
-			$(RESULTSDIR)
+			$(RESULTSDIR) \
+			$(TEMPDIR)/acceptance-image.tar
 
 .PHONY: acceptance-linux
 acceptance-linux: acceptance-test-deb-package-install acceptance-test-rpm-package-install ## Run acceptance tests on built binaries and packages (Linux)
@@ -250,7 +257,8 @@ acceptance-test-deb-package-install:
 			$(SNAPSHOTDIR) \
 			$(ACC_DIR) \
 			$(ACC_TEST_IMAGE) \
-			$(RESULTSDIR)
+			$(RESULTSDIR) \
+			$(TEMPDIR)/acceptance-image.tar
 
 .PHONY: acceptance-test-rpm-package-install
 acceptance-test-rpm-package-install:
@@ -259,7 +267,8 @@ acceptance-test-rpm-package-install:
 			$(SNAPSHOTDIR) \
 			$(ACC_DIR) \
 			$(ACC_TEST_IMAGE) \
-			$(RESULTSDIR)
+			$(RESULTSDIR) \
+			$(TEMPDIR)/acceptance-image.tar
 
 # note: this is used by CI to determine if the inline-scan report cache should be busted for the inline-compare tests
 .PHONY: compare-fingerprint

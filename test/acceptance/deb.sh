@@ -6,6 +6,7 @@ DISTDIR=$1
 ACC_DIR=$2
 TEST_IMAGE=$3
 RESULTSDIR=$4
+TEST_IMAGE_TAR=$5
 
 TEST_TYPE=deb
 WORK_DIR=`mktemp -d -t "syft-acceptance-test-${TEST_TYPE}-XXXXXX"`
@@ -33,7 +34,6 @@ docker pull ${TEST_IMAGE}
 
 # install and run syft
 docker run --rm \
-    -v /var/run/docker.sock://var/run/docker.sock \
     -v /${PWD}:/src \
     -v ${WORK_DIR}:${WORK_DIR} \
     -e SYFT_CHECK_FOR_APP_UPDATE=0 \
@@ -42,7 +42,7 @@ docker run --rm \
         /bin/bash -x -c "\
             DEBIAN_FRONTEND=noninteractive apt install ${DISTDIR}/syft_*_linux_amd64.deb -y && \
             syft version && \
-            syft ${TEST_IMAGE} -vv -o json > ${REPORT} \
+            syft docker-archive:${TEST_IMAGE_TAR} -vv -o json > ${REPORT} \
         "
 
 # keep the generated report around
