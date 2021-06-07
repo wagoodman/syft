@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/anchore/syft/internal"
+	"github.com/anchore/syft/internal/task"
 
 	"github.com/anchore/syft/internal/bus"
 	"github.com/anchore/syft/internal/presenter/poweruser"
@@ -73,12 +73,6 @@ func powerUserExecWorker(userInput string) <-chan error {
 	go func() {
 		defer close(errs)
 
-		tasks, err := powerUserTasks()
-		if err != nil {
-			errs <- err
-			return
-		}
-
 		checkForApplicationUpdate()
 
 		src, cleanup, err := source.New(userInput, appConfig.Registry.ToOptions())
@@ -93,28 +87,25 @@ func powerUserExecWorker(userInput string) <-chan error {
 			return
 		}
 
-		analysisResults := poweruser.JSONDocumentConfig{
-			SourceMetadata:    src.Metadata,
-			ApplicationConfig: *appConfig,
+		analysisResult, err := task.Execute(*appConfig, src, task.AllProducts...)
+		if err != nil {
+			errs <- err
+			return
 		}
-
-		wg := &sync.WaitGroup{}
-		for _, task := range tasks {
-			wg.Add(1)
-			go func(task powerUserTask) {
-				defer wg.Done()
-				if err = task(&analysisResults, src); err != nil {
-					errs <- err
-					return
-				}
-			}(task)
-		}
-
-		wg.Wait()
 
 		bus.Publish(partybus.Event{
-			Type:  event.PresenterReady,
-			Value: poweruser.NewJSONPresenter(analysisResults),
+			Type: event.PresenterReady,
+			Value: poweruser.NewJSONPresenter(poweruser.JSONDocumentConfig{
+				ApplicationConfig:   analysisResult.ApplicationConfig,
+				PackageCatalog:      analysisResult.PackageCatalog,
+				FileMetadata:        analysisResult.FileMetadata,
+				FileDigests:         analysisResult.FileDigests,
+				FileClassifications: analysisResult.FileClassifications,
+				FileContents:        analysisResult.FileContents,
+				Secrets:             analysisResult.Secrets,
+				Distro:              analysisResult.Distro,
+				SourceMetadata:      analysisResult.SourceMetadata,
+			}),
 		})
 	}()
 	return errs

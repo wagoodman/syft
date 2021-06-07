@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/anchore/syft/internal/task"
+
 	"github.com/spf13/viper"
 
 	"github.com/anchore/syft/internal"
@@ -14,7 +16,6 @@ import (
 	"github.com/anchore/syft/internal/log"
 	"github.com/anchore/syft/internal/presenter/packages"
 	"github.com/anchore/syft/internal/ui"
-	"github.com/anchore/syft/syft"
 	"github.com/anchore/syft/syft/distro"
 	"github.com/anchore/syft/syft/event"
 	"github.com/anchore/syft/syft/pkg"
@@ -204,14 +205,13 @@ func packagesExecWorker(userInput string) <-chan error {
 		}
 		defer cleanup()
 
-		catalog, d, err := syft.CatalogPackages(src, appConfig.Package.Cataloger.ScopeOpt)
+		analysisResult, err := task.Execute(*appConfig, src, packagesPresenterOpt.Products()...)
 		if err != nil {
-			errs <- fmt.Errorf("failed to catalog input: %+v", err)
+			errs <- err
 			return
 		}
-
 		if appConfig.Anchore.Host != "" {
-			if err := runPackageSbomUpload(src, src.Metadata, catalog, d, appConfig.Package.Cataloger.ScopeOpt); err != nil {
+			if err := runPackageSbomUpload(src, src.Metadata, analysisResult.PackageCatalog, analysisResult.Distro, appConfig.Package.Cataloger.ScopeOpt); err != nil {
 				errs <- err
 				return
 			}
@@ -221,8 +221,8 @@ func packagesExecWorker(userInput string) <-chan error {
 			Type: event.PresenterReady,
 			Value: packages.Presenter(packagesPresenterOpt, packages.PresenterConfig{
 				SourceMetadata: src.Metadata,
-				Catalog:        catalog,
-				Distro:         d,
+				Catalog:        analysisResult.PackageCatalog,
+				Distro:         analysisResult.Distro,
 				Scope:          appConfig.Package.Cataloger.ScopeOpt,
 			}),
 		})

@@ -1,6 +1,10 @@
 package packages
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/anchore/syft/internal/task"
+)
 
 const (
 	UnknownPresenterOption      PresenterOption = "UnknownPresenterOption"
@@ -39,5 +43,19 @@ func ParsePresenterOption(userStr string) PresenterOption {
 		return SPDXJSONPresenterOption
 	default:
 		return UnknownPresenterOption
+	}
+}
+
+func (p PresenterOption) Products() []task.Product {
+	switch p {
+	case SPDXJSONPresenterOption, SPDXTagValuePresenterOption:
+		return []task.Product{
+			task.PackagesProduct,
+			task.FileDigestsProduct,
+		}
+	default:
+		return []task.Product{
+			task.PackagesProduct,
+		}
 	}
 }
