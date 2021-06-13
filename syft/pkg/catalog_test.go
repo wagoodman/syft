@@ -3,6 +3,8 @@ package pkg
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/scylladb/go-set/strset"
 
 	"github.com/anchore/syft/syft/source"
@@ -199,6 +201,61 @@ func TestCatalog_PathIndexDeduplicatesRealVsVirtualPaths(t *testing.T) {
 			if len(actual) != 1 {
 				t.Errorf("expected exactly one package path, got %d", len(actual))
 			}
+		})
+	}
+
+}
+
+func TestCatalog_MergeRecords(t *testing.T) {
+	tests := []struct {
+		name     string
+		pkgs     []Package
+		expected []source.Location
+	}{
+		{
+			name: "multiple locations with shared path",
+			pkgs: []Package{
+				{
+					Locations: []source.Location{
+						{
+							RealPath:     "/b/path",
+							VirtualPath:  "/another/path",
+							FileSystemID: "a",
+						},
+					},
+					Type: RpmPkg,
+				},
+				{
+					Locations: []source.Location{
+						{
+							RealPath:     "/b/path",
+							VirtualPath:  "/another/path",
+							FileSystemID: "b",
+						},
+					},
+					Type: RpmPkg,
+				},
+			},
+			expected: []source.Location{
+				{
+					RealPath:     "/b/path",
+					VirtualPath:  "/another/path",
+					FileSystemID: "a",
+				},
+				{
+					RealPath:     "/b/path",
+					VirtualPath:  "/another/path",
+					FileSystemID: "b",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := NewCatalog(test.pkgs...).PackagesByPath("/b/path")
+			assert.Len(t, actual, 1)
+			assert.Equal(t, test.expected, actual[0].Locations)
 		})
 	}
 

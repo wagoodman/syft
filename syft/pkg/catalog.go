@@ -5,24 +5,25 @@ import (
 	"sync"
 
 	"github.com/anchore/syft/internal"
-
 	"github.com/anchore/syft/internal/log"
 )
 
 // Catalog represents a collection of Packages.
 type Catalog struct {
-	byID      map[ID]*Package
-	idsByType map[Type][]ID
-	idsByPath map[string][]ID // note: this is real path or virtual path
-	lock      sync.RWMutex
+	byID             map[ID]*Package
+	idsByFingerprint map[uint64]ID
+	idsByType        map[Type][]ID
+	idsByPath        map[string][]ID // note: this is real path or virtual path
+	lock             sync.RWMutex
 }
 
 // NewCatalog returns a new empty Catalog
 func NewCatalog(pkgs ...Package) *Catalog {
 	catalog := Catalog{
-		byID:      make(map[ID]*Package),
-		idsByType: make(map[Type][]ID),
-		idsByPath: make(map[string][]ID),
+		byID:             make(map[ID]*Package),
+		idsByFingerprint: make(map[uint64]ID),
+		idsByType:        make(map[Type][]ID),
+		idsByPath:        make(map[string][]ID),
 	}
 
 	for _, p := range pkgs {
@@ -67,18 +68,29 @@ func (c *Catalog) Add(p Package) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	_, exists := c.byID[p.ID]
-	if exists {
-		log.Errorf("package ID already exists in the catalog : id=%+v %+v", p.ID, p)
-		return
-	}
-
 	if p.ID == "" {
+		_, exists := c.byID[p.ID]
+		if exists {
+			log.Errorf("package ID already exists in the catalog : id=%+v %+v", p.ID, p)
+			return
+		}
+
 		p.ID = newID()
 	}
 
-	// store by package ID
+	fingerprint := p.Fingerprint()
+
+	if existingID, exists := c.idsByFingerprint[fingerprint]; exists {
+		// there is already a package with this fingerprint, merge the existing record with the new one
+		c.byID[existingID].Merge(p)
+		return
+	}
+
+	// store the package object by ID
 	c.byID[p.ID] = &p
+
+	// store by package fingerprint
+	c.idsByFingerprint[fingerprint] = p.ID
 
 	// store by package type
 	c.idsByType[p.Type] = append(c.idsByType[p.Type], p.ID)
