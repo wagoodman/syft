@@ -196,7 +196,7 @@ func validateInputArgs(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("an image/directory argument is required")
 	}
 
-	return cobra.MaximumNArgs(1)(cmd, args)
+	return cobra.MaximumNArgs(20)(cmd, args)
 }
 
 func packagesExec(_ *cobra.Command, args []string) error {

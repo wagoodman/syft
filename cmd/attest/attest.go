@@ -4,76 +4,94 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 
-	"github.com/anchore/syft/cmd/options"
-	"github.com/anchore/syft/internal/log"
-	"github.com/anchore/syft/syft"
+	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/pkg/errors"
+	cattest "github.com/sigstore/cosign/cmd/cosign/cli/attest"
+	"github.com/sigstore/cosign/cmd/cosign/cli/options"
 	"github.com/sigstore/cosign/cmd/cosign/cli/sign"
 	"github.com/sigstore/cosign/pkg/cosign/attestation"
-	"github.com/sigstore/sigstore/pkg/signature/dsse"
+
+	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 )
 
-func AttestCmd(ctx context.Context, ko sign.KeyOpts, certPath, predicateType, predicatePath, sbomPath string) error {
+type AttestConfiguration struct {
+	ImageRef      string
+	CertPath      string
+	PredicatePath string
+	PredicateType string
+	Ko            sign.KeyOpts
+	RegOpts       options.RegistryOptions
+}
+
+func AttestCmd(ctx context.Context, ac *AttestConfiguration) error {
 	// A key file is required
-
-	// Parse Predicate
-	predicateURI, err := options.ParsePredicateType(predicateType)
+	predicateURI, err := options.ParsePredicateType(ac.PredicateType)
 	if err != nil {
 		return err
 	}
 
-	// get sbom reader
-	sbombFile, err := os.Open(sbomPath)
-	if err != nil {
-		return err
-	}
-	defer sbombFile.Close()
-
-	// parse sbom
-	_, _, err = syft.Decode(sbombFile)
+	ref, err := name.ParseReference(ac.ImageRef)
 	if err != nil {
 		return err
 	}
 
-	// Signer From Key
-	sv, err := sign.SignerFromKeyOpts(ctx, certPath, ko)
-	if err != nil {
-		return err
-	}
-	defer sv.Close()
-	wrapped := dsse.WrapSigner(sv, predicateURI)
-
-	// Open Predicate
-	predicate, err := os.Open(predicatePath)
+	ociremoteOpts, err := ac.RegOpts.ClientOpts(ctx)
 	if err != nil {
 		return err
 	}
 
-	// GenerateStatement
+	digest, err := ociremote.ResolveDigest(ref, ociremoteOpts...)
+	if err != nil {
+		return err
+	}
+
+	h, _ := v1.NewHash(digest.Identifier())
+	ref = digest
+
+	attestor, _, closeFn, err := cattest.AttestorFromKeyOpts(ctx, ac.CertPath, predicateURI, ac.Ko)
+	if err != nil {
+		return errors.Wrap(err, "getting signer")
+	}
+	if closeFn != nil {
+		defer closeFn()
+	}
+
+	fmt.Fprintln(os.Stderr, "Using payload from:", ac.PredicatePath)
+	predicate, err := os.Open(ac.PredicatePath)
+	if err != nil {
+		return err
+	}
+	defer predicate.Close()
+
 	sh, err := attestation.GenerateStatement(attestation.GenerateOpts{
 		Predicate: predicate,
-		Type:      predicateType,
-		Digest:    "",
-		Repo:      sbomPath,
+		Type:      ac.PredicateType,
+		Digest:    h.Hex,
+		Repo:      digest.Repository.String(),
 	})
 	if err != nil {
 		return err
 	}
 
-	// marshal statement
 	payload, err := json.Marshal(sh)
 	if err != nil {
 		return err
 	}
 
-	// sign statement
-	signedPayload, err := wrapped.SignMessage(bytes.NewReader(payload))
+	ociAtt, _, err := attestor.Attest(ctx, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
 
-	log.Info(signedPayload)
-	// New Attestation
+	signedPayload, err := ociAtt.Payload()
+	if err != nil {
+		return err
+	}
 
-	// Attache Attestation to sbom
-	log.Info("attesting provided sbom")
+	fmt.Println(string(signedPayload))
 	return nil
 }
