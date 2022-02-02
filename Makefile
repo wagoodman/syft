@@ -306,7 +306,7 @@ CHANGELOG.md:
 .PHONY: release
 release: clean-dist  ## Build and publish final binaries and packages. Intended to be run only on macOS.
 	$(call title,Publishing release artifacts)
-	$(RELEASE_CMD) --config $(TEMPDIR)/goreleaser.yaml
+	$(RELEASE_CMD)
 
 .PHONY: clean
 clean: clean-dist clean-snapshot clean-test-image-cache ## Remove previous builds, result reports, and test cache
