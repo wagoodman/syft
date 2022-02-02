@@ -306,25 +306,7 @@ CHANGELOG.md:
 .PHONY: release
 release: clean-dist CHANGELOG.md  ## Build and publish final binaries and packages. Intended to be run only on macOS.
 	$(call title,Publishing release artifacts)
-	# login to docker
-	# note: the previous step creates a new keychain, so it is important to reauth into docker.io
-	@echo $${DOCKER_PASSWORD} | docker login docker.io -u $${DOCKER_USERNAME}  --password-stdin
-
-	# create a config with the dist dir overridden
-	echo "dist: $(DISTDIR)" > $(TEMPDIR)/goreleaser.yaml
-	cat .goreleaser.yaml >> $(TEMPDIR)/goreleaser.yaml
-
-	rm -f .github/scripts/apple-signing/log/signing-*
-
-	bash -c "\
-		$(RELEASE_CMD) \
-			--config $(TEMPDIR)/goreleaser.yaml \
-			--release-notes <(cat CHANGELOG.md)\
-				 || cat .github/scripts/apple-signing/log/signing-* && false"
-
-	# upload the version file that supports the application version update check (excluding pre-releases)
-	.github/scripts/update-version-file.sh "$(DISTDIR)" "$(VERSION)"
-
+	$(RELEASE_CMD) --config $(TEMPDIR)/goreleaser.yaml
 
 .PHONY: clean
 clean: clean-dist clean-snapshot clean-test-image-cache ## Remove previous builds, result reports, and test cache
