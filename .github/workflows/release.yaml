@@ -1,9 +1,6 @@
 name: "Release"
 on:
   push:
-    # take no actions on push to any branch...
-    branches-ignore:
-      - "**"
     # ... only act on release tags
     tags:
       - "v*"
@@ -12,89 +9,10 @@ env:
   GO_VERSION: "1.16.x"
 
 jobs:
-  quality-gate:
-    environment: release
-    runs-on: ubuntu-latest # This OS choice is arbitrary. None of the steps in this job are specific to either Linux or macOS.
-    steps:
-      - uses: actions/checkout@v2
-
-      # we don't want to release commits that have been pushed and tagged, but not necessarily merged onto main
-      - name: Ensure tagged commit is on main
-        run: |
-          echo "Tag: ${GITHUB_REF##*/}"
-          git fetch origin main
-          git merge-base --is-ancestor ${GITHUB_REF##*/} origin/main && echo "${GITHUB_REF##*/} is a commit on main!"
-
-      - name: Check static analysis results
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: static-analysis
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
-          checkName: "Static analysis"
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Check unit test results
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: unit
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
-          checkName: "Unit tests"
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Check integration test results
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: integration
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
-          checkName: "Integration tests"
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Check acceptance test results (linux)
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: acceptance-linux
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
-          checkName: "Acceptance tests (Linux)"
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Check acceptance test results (mac)
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: acceptance-mac
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
-          checkName: "Acceptance tests (Mac)"
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Check cli test results (linux)
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: cli-linux
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
-          checkName: "CLI tests (Linux)"
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Quality gate
-        if: steps.static-analysis.outputs.conclusion != 'success' || steps.unit.outputs.conclusion != 'success' || steps.integration.outputs.conclusion != 'success' || steps.cli-linux.outputs.conclusion != 'success' || steps.acceptance-linux.outputs.conclusion != 'success' || steps.acceptance-mac.outputs.conclusion != 'success'
-        run: |
-          echo "Static Analysis Status: ${{ steps.static-analysis.conclusion }}"
-          echo "Unit Test Status: ${{ steps.unit.outputs.conclusion }}"
-          echo "Integration Test Status: ${{ steps.integration.outputs.conclusion }}"
-          echo "Acceptance Test (Linux) Status: ${{ steps.acceptance-linux.outputs.conclusion }}"
-          echo "Acceptance Test (Mac) Status: ${{ steps.acceptance-mac.outputs.conclusion }}"
-          echo "CLI Test (Linux) Status: ${{ steps.cli-linux.outputs.conclusion }}"
-          false
 
   release:
-    needs: [quality-gate]
-    runs-on: macos-latest # Due to our code signing process, it's vital that we run our release steps on macOS.
+    runs-on: ubuntu-20.04
     steps:
-      - uses: docker-practice/actions-setup-docker@v1
 
       - uses: actions/setup-go@v2
         with:
@@ -124,48 +42,10 @@ jobs:
         if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
         run: make bootstrap
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v2
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.SIGNING_GPG_PRIVATE_KEY }}
-          PASSPHRASE: ${{ secrets.SIGNING_GPG_PASSPHRASE }}
-
-      - name: GPG signing info
-        run: |
-          echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-          echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-          echo "name:        ${{ steps.import_gpg.outputs.name }}"
-          echo "email:       ${{ steps.import_gpg.outputs.email }}"
-
       - name: Build & publish release artifacts
         run: make release
         env:
-          DOCKER_USERNAME: ${{ secrets.TOOLBOX_DOCKER_USER }}
-          DOCKER_PASSWORD: ${{ secrets.TOOLBOX_DOCKER_PASS }}
-          GITHUB_TOKEN: ${{ secrets.ANCHORE_GIT_READ_TOKEN }}
-          GPG_PRIVATE_KEY: ${{ secrets.SIGNING_GPG_PRIVATE_KEY }}
-          PASSPHRASE: ${{ secrets.SIGNING_GPG_PASSPHRASE }}
-          SIGNING_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.TOOLBOX_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TOOLBOX_AWS_SECRET_ACCESS_KEY }}
-          APPLE_DEVELOPER_ID_CERT: ${{ secrets.APPLE_DEVELOPER_ID_CERT }} # Used during macOS code signing.
-          APPLE_DEVELOPER_ID_CERT_PASS: ${{ secrets.APPLE_DEVELOPER_ID_CERT_PASS }} # Used during macOS code signing.
-          AC_USERNAME: ${{ secrets.ENG_CI_APPLE_ID }} # Used during macOS notarization.
-          AC_PASSWORD: ${{ secrets.ENG_CI_APPLE_ID_PASS }} # Used during macOS notarization.
-
-      - uses: anchore/sbom-action@v0
-        with:
-          artifact-name: sbom.spdx.json
-
-      - uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,workflow,action,eventName
-          text: "A new Syft release is ready to be manually published: https://github.com/anchore/syft/releases"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TOOLBOX_WEBHOOK_URL }}
-        if: ${{ success() }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v2
         with:

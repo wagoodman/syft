@@ -2,10 +2,6 @@ release:
   prerelease: auto
   draft: true
 
-env:
-  # required to support multi architecture docker builds
-  - DOCKER_CLI_EXPERIMENTAL=enabled
-
 builds:
   - id: linux-build
     binary: syft
@@ -38,16 +34,6 @@ builds:
     env: *build-env
     ldflags: *build-ldflags
 
-  - id: windows-build
-    binary: syft
-    goos:
-      - windows
-    goarch:
-      - amd64
-    mod_timestamp: *build-timestamp
-    env: *build-env
-    ldflags: *build-ldflags
-
 
 archives:
   - id: linux-archives
@@ -58,84 +44,3 @@ archives:
     builds:
       - darwin-build
 
-  - id: windows-archives
-    format: zip
-    builds:
-      - windows-build
-
-signs:
-  - artifacts: archive
-    ids:
-      - darwin-archives
-    signature: "${artifact}"
-    cmd: ./.github/scripts/apple-signing/sign-archives.sh
-    args:
-      - "${artifact}"
-      - "{{ .IsSnapshot }}"
-
-nfpms:
-  - license: "Apache 2.0"
-    maintainer: "Anchore, Inc"
-    homepage: &website "https://github.com/anchore/syft"
-    description: &description "A tool that generates a Software Bill Of Materials (SBOM) from container images and filesystems"
-    formats:
-      - rpm
-      - deb
-
-brews:
-  - tap:
-      owner: anchore
-      name: homebrew-syft
-    ids:
-      - darwin-archives
-      - linux-archives
-    homepage: *website
-    description: *description
-    license: "Apache License 2.0"
-
-dockers:
-  - image_templates:
-      - "anchore/syft:latest"
-      - "anchore/syft:{{ .Tag }}-amd64"
-      - "anchore/syft:v{{ .Major }}-amd64"
-      - "anchore/syft:v{{ .Major }}.{{ .Minor }}-amd64"
-    dockerfile: Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--build-arg=BUILD_DATE={{.Date}}"
-      - "--build-arg=BUILD_VERSION={{.Version}}"
-      - "--build-arg=VCS_REF={{.FullCommit}}"
-      - "--build-arg=VCS_URL={{.GitURL}}"
-
-  - image_templates:
-      - "anchore/syft:{{ .Tag }}-arm64v8"
-      - "anchore/syft:v{{ .Major }}-arm64v8"
-      - "anchore/syft:v{{ .Major }}.{{ .Minor }}-arm64v8"
-    goarch: arm64
-    dockerfile: Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/arm64/v8"
-      - "--build-arg=BUILD_DATE={{.Date}}"
-      - "--build-arg=BUILD_VERSION={{.Version}}"
-      - "--build-arg=VCS_REF={{.FullCommit}}"
-      - "--build-arg=VCS_URL={{.GitURL}}"
-
-docker_manifests:
-  - name_template: anchore/syft:{{ .Tag }}
-    image_templates:
-      - anchore/syft:{{ .Tag }}-amd64
-      - anchore/syft:v{{ .Major }}-amd64
-      - anchore/syft:v{{ .Major }}.{{ .Minor }}-amd64
-      - anchore/syft:{{ .Tag }}-arm64v8
-      - anchore/syft:v{{ .Major }}-arm64v8
-      - anchore/syft:v{{ .Major }}.{{ .Minor }}-arm64v8
-  - name_template: anchore/syft:latest
-    image_templates:
-      - anchore/syft:{{ .Tag }}-amd64
-      - anchore/syft:v{{ .Major }}-amd64
-      - anchore/syft:v{{ .Major }}.{{ .Minor }}-amd64
-      - anchore/syft:{{ .Tag }}-arm64v8
-      - anchore/syft:v{{ .Major }}-arm64v8
-      - anchore/syft:v{{ .Major }}.{{ .Minor }}-arm64v8
