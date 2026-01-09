@@ -1,0 +1,44 @@
+# Cataloger capabilities. See ../README.md for documentation.
+
+catalogers:
+  - ecosystem: dhi # MANUAL
+    name: dhi-cataloger # AUTO-GENERATED
+    type: generic # AUTO-GENERATED
+    source: # AUTO-GENERATED
+      file: syft/pkg/cataloger/dhi/cataloger.go
+      function: NewCataloger
+    selectors: # AUTO-GENERATED
+      - dhi
+      - image
+      - installed
+      - package
+    parsers: # AUTO-GENERATED structure
+      - function: parseSPDX
+        detector: # AUTO-GENERATED
+          method: glob # AUTO-GENERATED
+          criteria: # AUTO-GENERATED
+            - /opt/docker/sbom/**/*.json
+        metadata_types: # AUTO-GENERATED
+          - pkg.DHISBOMEntry
+        package_types: # AUTO-GENERATED
+          - dhi
+        json_schema_types: # AUTO-GENERATED
+          - DhiSbomEntry
+        capabilities: # MANUAL - preserved across regeneration
+          - name: license
+            default: true
+          - name: dependency.depth
+            default:
+              - direct
+              - indirect
+          - name: dependency.edges
+            default: complete
+          - name: dependency.kinds
+            default:
+              - runtime
+          - name: package_manager.files.listing
+            default: false
+          - name: package_manager.files.digests
+            default: false
+          - name: package_manager.package_integrity_hash
+            default: false
