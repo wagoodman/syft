@@ -18,6 +18,7 @@ const (
 	ApkPkg                  Type = "apk"
 	BinaryPkg               Type = "binary"
 	BitnamiPkg              Type = "bitnami"
+	DHIPkg                  Type = "dhi"
 	CocoapodsPkg            Type = "pod"
 	ConanPkg                Type = "conan"
 	CondaPkg                Type = "conda"
@@ -63,6 +64,7 @@ var AllPkgs = []Type{
 	ApkPkg,
 	BinaryPkg,
 	BitnamiPkg,
+	DHIPkg,
 	CocoapodsPkg,
 	ConanPkg,
 	CondaPkg,
@@ -113,6 +115,8 @@ func (t Type) PackageURLType() string {
 		return packageurl.TypeAlpine
 	case BitnamiPkg:
 		return packageurl.TypeBitnami
+	case DHIPkg:
+		return "dhi"
 	case CocoapodsPkg:
 		return packageurl.TypeCocoapods
 	case ConanPkg:
@@ -204,6 +208,8 @@ func TypeByName(name string) Type {
 		return ApkPkg
 	case packageurl.TypeBitnami:
 		return BitnamiPkg
+	case "dhi":
+		return DHIPkg
 	case packageurl.TypeDebian:
 		return DebPkg
 	case packageurl.TypeComposer:
